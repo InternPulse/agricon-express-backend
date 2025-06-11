@@ -1,4 +1,4 @@
-name: Payment Gateway CI
+name: AGRICON CI
 
 on:
   push:
