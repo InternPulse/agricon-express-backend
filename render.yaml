@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: payment-gateway-api
+    name: AGRICON
     env: node
     buildCommand: npm install && npm run build:render
     startCommand: npm start
@@ -9,7 +9,7 @@ services:
         value: production
       - key: PORT
         value: 3000
-      - key: PAYSTACK_SECRET_KEY
-        sync: false
-      - key: PAYSTACK_BASE_URL
-        value: https://api.paystack.co
+      # - key: PAYSTACK_SECRET_KEY
+      #   sync: false
+      # - key: PAYSTACK_BASE_URL
+      #   value: https://api.paystack.co
