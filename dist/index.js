@@ -1,8 +1,6 @@
-import express from 'express';
-const app = express();
-app.get('/', (req, res) => {
-    res.send('AGRICON');
-});
-app.listen(3000, () => {
-    console.log("Listening on port 3000");
+import app from './app';
+import { config } from './config/config.env';
+const port = config.PORT;
+app.listen(port, () => {
+    console.log(`Booking Listening on port localhost:${port}`);
 });

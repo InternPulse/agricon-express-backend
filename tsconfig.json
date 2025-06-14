@@ -33,6 +33,6 @@
   "ts-node": {
     "esm": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/test_database_connection/types"],
   "exclude": ["node_modules", "dist", "src/tests"]
 }
