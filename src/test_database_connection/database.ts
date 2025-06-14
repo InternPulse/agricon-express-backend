@@ -1,0 +1,43 @@
+import { Pool, PoolClient } from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Create connection pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false 
+  }
+});
+
+// Database connection function
+export const connectDB = async (): Promise<PoolClient> => {
+  try {
+    const client = await pool.connect();
+    return client;
+    // console.log(client)
+  } catch (error) {
+    console.error('Database connection error:', error);
+    throw error;
+  }
+};
+
+
+export const query = async (text: string, params?: any[]): Promise<any> => {
+  const client = await connectDB();
+  try {
+    const result = await client.query(text, params);
+    return result;
+  } catch (error) {
+    console.error('Query error:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+// Close all connections
+export const closeDB = async (): Promise<void> => {
+  await pool.end();
+};

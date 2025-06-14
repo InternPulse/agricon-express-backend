@@ -1,11 +1,27 @@
 import express from 'express';
 
-const app = express();
+import dbtest from "./test_database_connection/app";
+import { testConnection } from "./test_database_connection/testConnection";
+import app from './app';
+const port = process.env.PORT || 3000;
 
-app.get('/', (req, res) => {
-    res.send('AGRICON – Internpulse Project, Cohort 8 (2025)');
-})
+// const app = express();
 
-app.listen(3000, () => {
-    console.log("Listening on port 3000")
-})
+// testConnection();
+
+dbtest.get("/", (req, res) => {
+  try {
+    res.send("AGRICON – Internpulse Project, Cohort 8 (2025)");
+  } catch (error) {
+    console.log(error)
+    res.status(400).json({message: "Failed", error: error})
+  }
+});
+
+// dbtest.listen(port, () => {
+//   console.log(`Listening on port localhost:${port}`);
+// });
+
+app.listen(port, () => {
+  console.log(`Booking Listening on port localhost:${port}`);
+});
