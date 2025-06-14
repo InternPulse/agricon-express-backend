@@ -23,7 +23,7 @@ export const connectDB = async (): Promise<PoolClient> => {
   }
 };
 
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const query = async (text: string, params?: any[]): Promise<any> => {
   const client = await connectDB();
   try {

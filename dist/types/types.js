@@ -1,3 +1,4 @@
+/* eslint-disable */
 export var UserRole;
 (function (UserRole) {
     UserRole[UserRole["FARMER"] = 0] = "FARMER";

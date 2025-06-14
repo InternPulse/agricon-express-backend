@@ -82,6 +82,7 @@ dbtest.post('/api/users', async (req, res) => {
     try {
         const result = await query('INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *', [name, email]);
         res.status(201).json(result.rows[0]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }
     catch (error) {
         if (error.code === '23505') { // Unique violation
@@ -123,6 +124,7 @@ dbtest.put('/api/users/:id', async (req, res) => {
     }
     try {
         let updateQuery = 'UPDATE users SET ';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const values = [];
         const updates = [];
         if (name) {
@@ -142,6 +144,7 @@ dbtest.put('/api/users/:id', async (req, res) => {
             return;
         }
         res.json(result.rows[0]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }
     catch (error) {
         if (error.code === '23505') { // Unique violation

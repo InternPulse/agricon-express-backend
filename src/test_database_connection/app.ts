@@ -10,14 +10,6 @@ const dbtest = express();
 // Middleware
 dbtest.use(express.json());
 
-// Types
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  created_at: Date;
-}
-
 interface CreateUserRequest {
   name: string;
   email: string;
@@ -107,6 +99,7 @@ dbtest.post('/api/users', async (req: Request, res: Response): Promise<void> => 
       [name, email]
     );
     res.status(201).json(result.rows[0]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.code === '23505') { // Unique violation
       res.status(400).json({ error: 'Email already exists' });
@@ -152,6 +145,7 @@ dbtest.put('/api/users/:id', async (req: Request, res: Response) : Promise<void>
 
   try {
     let updateQuery = 'UPDATE users SET ';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const values: any[] = [];
     const updates: string[] = [];
     
@@ -177,6 +171,7 @@ dbtest.put('/api/users/:id', async (req: Request, res: Response) : Promise<void>
     }
     
     res.json(result.rows[0]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.code === '23505') { // Unique violation
       res.status(400).json({ error: 'Email already exists' });

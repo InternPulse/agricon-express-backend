@@ -1,7 +1,4 @@
-import express from 'express';
-
 import dbtest from "./test_database_connection/app";
-import { testConnection } from "./test_database_connection/testConnection";
 import app from './app';
 const port = process.env.PORT || 3000;
 

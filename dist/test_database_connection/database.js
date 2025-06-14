@@ -20,6 +20,7 @@ export const connectDB = async () => {
         throw error;
     }
 };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const query = async (text, params) => {
     const client = await connectDB();
     try {
