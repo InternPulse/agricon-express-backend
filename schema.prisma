@@ -1,0 +1,123 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  FARMER
+  INFRA_OWNER
+  ADMIN
+}
+
+enum FacilityType {
+  DRYER
+  STORAGE
+  PROCESSING
+  OTHER
+}
+
+enum TransactionReason {
+  BOOKING
+  EXTENSION
+  PENALTY
+  OTHER
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id                     String    @id @default(uuid())
+  email                  String    @unique
+  password               String
+  role                   UserRole
+  emailVerificationToken String?
+  emailVerified          Boolean   @default(false)
+  emailTokenExpiresAt    DateTime?
+  passwordResetToken     String?
+  passwordTokenExpiresAt DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  farmer                 Farmer?
+  operator               Operator?
+}
+
+model Farmer {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  firstName String
+  lastName  String
+  phone     String
+  address   String
+  bookings  Booking[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Operator {
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id])
+  businessName String
+  firstName    String
+  lastName     String
+  phone        String
+  address      String
+  facilities   Facility[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Facility {
+  id          String     @id @default(uuid())
+  operatorId  String
+  operator    Operator   @relation(fields: [operatorId], references: [id])
+  location    String
+  address     String
+  cost        Float
+  type        FacilityType
+  available   Boolean    @default(true)
+  contact     String
+  description String?
+  bookings    Booking[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Booking {
+  id         String     @id @default(uuid())
+  facilityId String
+  facility   Facility   @relation(fields: [facilityId], references: [id])
+  farmerId   String
+  farmer     Farmer     @relation(fields: [farmerId], references: [id])
+  amount     Float
+  paid       Boolean    @default(false)
+  active     Boolean    @default(false)
+  reservedAt DateTime   @default(now())
+  startDate  DateTime
+  endDate    DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  transaction Transaction?
+}
+
+model Transaction {
+  id           String            @id @default(uuid())
+  bookingId    String            @unique
+  booking      Booking           @relation(fields: [bookingId], references: [id])
+  reason       TransactionReason
+  paymentMethod String
+  amount       Float
+  status       TransactionStatus @default(PENDING)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
