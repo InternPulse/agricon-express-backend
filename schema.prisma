@@ -34,48 +34,28 @@ enum TransactionStatus {
   REFUNDED
 }
 
+// = = = = = Reference to tables implemented by Django/.Net already = = = 
 model User {
-  id                     String    @id @default(uuid())
-  email                  String    @unique
-  password               String
-  role                   UserRole
-  emailVerificationToken String?
-  emailVerified          Boolean   @default(false)
-  emailTokenExpiresAt    DateTime?
-  passwordResetToken     String?
-  passwordTokenExpiresAt DateTime?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-  farmer                 Farmer?
-  operator               Operator?
+  id  String    @id @default(uuid())
+
+  @@map("users") // Match the Django auth_user table name
 }
 
 model Farmer {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-  firstName String
-  lastName  String
-  phone     String
-  address   String
-  bookings  Booking[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id  String    @id @default(uuid())
+
+  @@map("farmers") // Match the Django auth_user table name
+  Booking Booking[]
 }
 
 model Operator {
-  id           String     @id @default(uuid())
-  userId       String     @unique
-  user         User       @relation(fields: [userId], references: [id])
-  businessName String
-  firstName    String
-  lastName     String
-  phone        String
-  address      String
-  facilities   Facility[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id  String    @id @default(uuid())
+
+  @@map("operators") // Match the Django auth_user table name
+  Facility Facility[]
 }
+
+// = = = = = Reference to tables implemented by Django/.Net already = = = 
 
 model Facility {
   id          String     @id @default(uuid())
@@ -107,17 +87,60 @@ model Booking {
   endDate    DateTime
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
-  transaction Transaction?
 }
 
-model Transaction {
-  id           String            @id @default(uuid())
-  bookingId    String            @unique
-  booking      Booking           @relation(fields: [bookingId], references: [id])
-  reason       TransactionReason
-  paymentMethod String
-  amount       Float
-  status       TransactionStatus @default(PENDING)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-}
+// == MODEL IMPLEMENTATIONS FOR BACKUP
+// model User {
+//   id                     String    @id @default(uuid())
+//   email                  String    @unique
+//   password               String
+//   role                   UserRole
+//   emailVerificationToken String?
+//   emailVerified          Boolean   @default(false)
+//   emailTokenExpiresAt    DateTime?
+//   passwordResetToken     String?
+//   passwordTokenExpiresAt DateTime?
+//   createdAt              DateTime  @default(now())
+//   updatedAt              DateTime  @updatedAt
+//   farmer                 Farmer?
+//   operator               Operator?
+// }
+
+// model Farmer {
+//   id        String   @id @default(uuid())
+//   userId    String   @unique
+//   user      User     @relation(fields: [userId], references: [id])
+//   firstName String
+//   lastName  String
+//   phone     String
+//   address   String
+//   bookings  Booking[]
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model Operator {
+//   id           String     @id @default(uuid())
+//   userId       String     @unique
+//   user         User       @relation(fields: [userId], references: [id])
+//   businessName String
+//   firstName    String
+//   lastName     String
+//   phone        String
+//   address      String
+//   facilities   Facility[]
+//   createdAt    DateTime   @default(now())
+//   updatedAt    DateTime   @updatedAt
+// }
+
+// model Transaction {
+//   id           String            @id @default(uuid())
+//   bookingId    String            @unique
+//   booking      Booking           @relation(fields: [bookingId], references: [id])
+//   reason       TransactionReason
+//   paymentMethod String
+//   amount       Float
+//   status       TransactionStatus @default(PENDING)
+//   createdAt    DateTime          @default(now())
+//   updatedAt    DateTime          @updatedAt
+// }

@@ -1,5 +1,8 @@
-import { UserRole } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
+  import jwt from 'jsonwebtoken';
+import { UserRole } from '../types/types';
+import { BadRequestError, UnauthorizedError } from '../errors/errors';
+import { config } from '../config/config.env';
 
 
 const MOCK_USER = [
@@ -8,61 +11,45 @@ const MOCK_USER = [
         email: 'farmer@example.com',
         role: UserRole.FARMER
     },
-  {
-    id: 'owner-1',
-    email: 'owner@example.com',
-    role: UserRole.INFRA_OWNER
-  }
+    {
+      id: 'owner-1',
+      email: 'owner@example.com',
+      role: UserRole.INFRA_OWNER
+    }
 ];
+
 
 declare global {
     namespace Express {
         interface Request {
-            user: {
+            currentUser: {
               id: string;
               email: string;
-              role: "FARMER" | "INFRA_OWNER";
+              role: UserRole;
             }
         }
     }
 }
 
 
-export const authenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
+export const verifyAuth = (req: Request, _res: Response, next: NextFunction): void => {
+  // mock authentication for demonstration purposes
+  req.currentUser = MOCK_USER[Math.floor(Math.random() * MOCK_USER.length)];
+  // end of mock authentication
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+   throw new UnauthorizedError({message: "Authorization header missing or invalid", from: "authenticateJWT()"});
+  }
+
+  const token = authHeader.split(' ')[1];
+
   try {
-    // For mock purposes
-    const authHeader = req.headers['mock-user'];
-
-    if(!authHeader){
-      res.status(403).json({ 
-        status: 'Failed',
-        message: 'Unauthorized (Try specing a mock user)' 
-      });
-      return
-    };
-
-    const user = MOCK_USER.find(user => user.email === authHeader);
-    if (!user) {
-     res.status(403).json({
-        status: 'Failed',
-      });
-       return 
-    }
-
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role
-    }
-
-    // res.send(user)
-    next()
-  } catch (error) {
-    res.status(401).json({
-      status: 'Failed',
-      message: 'Unable to authenticate'
-    });
-    console.log(error)
+    const decoded = jwt.verify(token, config.JWT_SECRET);
+    req.currentUser = decoded as { id: string; email: string; role: UserRole };
+    next();
+  } catch (err) {
+    throw new BadRequestError({message: `JWT auth error${err}`, from: "authenticateJWT()"});
   }
 };
 
@@ -70,7 +57,7 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
 // Role Middleware
 export const authorizeRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if(!roles.includes(req.user.role)){
+    if(!roles.includes(req.currentUser .role)){
       res.status(403).json({
         status: 'Failed',
         message: "Unauthorized"
