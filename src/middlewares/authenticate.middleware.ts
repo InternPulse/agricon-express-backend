@@ -49,7 +49,7 @@ export const verifyAuth = (req: Request, _res: Response, next: NextFunction): vo
     req.currentUser = decoded as { id: string; email: string; role: UserRole };
     next();
   } catch (err) {
-    throw new BadRequestError({message: "Error authenticating user", from: "authenticateJWT()"});
+    throw new BadRequestError({message: `JWT auth error${err}`, from: "authenticateJWT()"});
   }
 };
 
