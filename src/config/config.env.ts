@@ -7,4 +7,5 @@ export const config = {
   DATABASE_URL: process.env.DATABASE_URL || '',
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT || '4000'),
+  JWT_SECRET: process.env.JWT_SECRET || 'your-default-secret',
 } as const;
