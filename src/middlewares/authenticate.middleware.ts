@@ -14,7 +14,7 @@ const MOCK_USER = [
     {
       id: 'owner-1',
       email: 'owner@example.com',
-      role: UserRole.INFRA_OWNER
+      role: UserRole.OPERATOR
     }
 ];
 
@@ -35,6 +35,7 @@ declare global {
 export const verifyAuth = (req: Request, _res: Response, next: NextFunction): void => {
   // mock authentication for demonstration purposes
   req.currentUser = MOCK_USER[Math.floor(Math.random() * MOCK_USER.length)];
+  next();
   // end of mock authentication
   const authHeader = req.headers.authorization;
 
