@@ -38,20 +38,20 @@ enum TransactionStatus {
 model User {
   id  String    @id @default(uuid())
 
-  @@map("users") // Match the Django auth_user table name
+  @@map("user") // Match the Django auth_user table name
 }
 
 model Farmer {
   id  String    @id @default(uuid())
 
-  @@map("farmers") // Match the Django auth_user table name
+  @@map("farmer") // Match the Django auth_user table name
   Booking Booking[]
 }
 
 model Operator {
   id  String    @id @default(uuid())
 
-  @@map("operators") // Match the Django auth_user table name
+  @@map("operator") // Match the Django auth_user table name
   Facility Facility[]
 }
 
