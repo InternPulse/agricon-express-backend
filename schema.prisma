@@ -20,20 +20,76 @@ enum FacilityType {
   OTHER
 }
 
-// enum TransactionReason {
-//   BOOKING
-//   EXTENSION
-//   PENALTY
-//   OTHER
-// }
+enum TransactionReason {
+  BOOKING
+  EXTENSION
+  PENALTY
+  OTHER
+}
 
-// enum TransactionStatus {
-//   PENDING
-//   COMPLETED
-//   FAILED
-//   REFUNDED
-// }
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
 
+// = = = = = Reference to tables implemented by Django/.Net already = = = 
+model User {
+  id  String    @id @default(uuid())
+
+  @@map("users") // Match the Django auth_user table name
+}
+
+model Farmer {
+  id  String    @id @default(uuid())
+
+  @@map("farmers") // Match the Django auth_user table name
+  Booking Booking[]
+}
+
+model Operator {
+  id  String    @id @default(uuid())
+
+  @@map("operators") // Match the Django auth_user table name
+  Facility Facility[]
+}
+
+// = = = = = Reference to tables implemented by Django/.Net already = = = 
+
+model Facility {
+  id          String     @id @default(uuid())
+  operatorId  String
+  operator    Operator   @relation(fields: [operatorId], references: [id])
+  location    String
+  address     String
+  cost        Float
+  type        FacilityType
+  available   Boolean    @default(true)
+  contact     String
+  description String?
+  bookings    Booking[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Booking {
+  id         String     @id @default(uuid())
+  facilityId String
+  facility   Facility   @relation(fields: [facilityId], references: [id])
+  farmerId   String
+  farmer     Farmer     @relation(fields: [farmerId], references: [id])
+  amount     Float
+  paid       Boolean    @default(false)
+  active     Boolean    @default(false)
+  reservedAt DateTime   @default(now())
+  startDate  DateTime
+  endDate    DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+// == MODEL IMPLEMENTATIONS FOR BACKUP
 // model User {
 //   id                     String    @id @default(uuid())
 //   email                  String    @unique
@@ -76,38 +132,6 @@ enum FacilityType {
 //   createdAt    DateTime   @default(now())
 //   updatedAt    DateTime   @updatedAt
 // }
-
-model Facility {
-  id          String     @id @default(uuid())
-  operatorId  String
- // operator    Operator   @relation(fields: [operatorId], references: [id])
-  location    String
-  address     String
-  cost        Float
-  type        FacilityType
-  available   Boolean    @default(true)
-  contact     String
-  description String?
-  bookings    Booking[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model Booking {
-  id         String     @id @default(uuid())
-  facilityId String
-  facility   Facility   @relation(fields: [facilityId], references: [id])
-  farmerId   String
-//  farmer     Farmer     @relation(fields: [farmerId], references: [id])
-  amount     Float
-  paid       Boolean    @default(false)
-  active     Boolean    @default(false)
-  reservedAt DateTime   @default(now())
-  startDate  DateTime
-  endDate    DateTime
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-}
 
 // model Transaction {
 //   id           String            @id @default(uuid())
