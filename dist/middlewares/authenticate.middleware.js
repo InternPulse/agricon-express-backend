@@ -1,4 +1,7 @@
-import { UserRole } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+import { UserRole } from '../types/types';
+import { BadRequestError, UnauthorizedError } from '../errors/errors';
+import { config } from '../config/config.env';
 const MOCK_USER = [
     {
         id: 'farmer-1',
@@ -11,45 +14,28 @@ const MOCK_USER = [
         role: UserRole.INFRA_OWNER
     }
 ];
-export const authenticateJWT = (req, res, next) => {
+export const verifyAuth = (req, _res, next) => {
+    // mock authentication for demonstration purposes
+    req.currentUser = MOCK_USER[Math.floor(Math.random() * MOCK_USER.length)];
+    // end of mock authentication
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new UnauthorizedError({ message: "Authorization header missing or invalid", from: "authenticateJWT()" });
+    }
+    const token = authHeader.split(' ')[1];
     try {
-        // For mock purposes
-        const authHeader = req.headers['mock-user'];
-        if (!authHeader) {
-            res.status(403).json({
-                status: 'Failed',
-                message: 'Unauthorized (Try specing a mock user)'
-            });
-            return;
-        }
-        ;
-        const user = MOCK_USER.find(user => user.email === authHeader);
-        if (!user) {
-            res.status(403).json({
-                status: 'Failed',
-            });
-            return;
-        }
-        req.user = {
-            id: user.id,
-            email: user.email,
-            role: user.role
-        };
-        // res.send(user)
+        const decoded = jwt.verify(token, config.JWT_SECRET);
+        req.currentUser = decoded;
         next();
     }
-    catch (error) {
-        res.status(401).json({
-            status: 'Failed',
-            message: 'Unable to authenticate'
-        });
-        console.log(error);
+    catch (err) {
+        throw new BadRequestError({ message: `JWT auth error${err}`, from: "authenticateJWT()" });
     }
 };
 // Role Middleware
 export const authorizeRole = (roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
+        if (!roles.includes(req.currentUser.role)) {
             res.status(403).json({
                 status: 'Failed',
                 message: "Unauthorized"

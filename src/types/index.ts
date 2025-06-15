@@ -1,8 +1,7 @@
-import app from "./app";
-import sequelize from "./config/config.db";
-import { config } from "./config/config.env";
-
-const port = config.PORT || 4000;
+import app from '../app';
+import sequelize from '../config/config.db';
+import { config } from '../config/config.env';
+const port = config.PORT;
 
 const start = async () => {
   try {
