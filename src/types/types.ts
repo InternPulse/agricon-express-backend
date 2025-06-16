@@ -78,6 +78,7 @@ export interface Facility {
   id: string;
   operatorId: string;
   location: string;
+  name: string
   address: string;
   cost: number;
   type: FacilityType;
