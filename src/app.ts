@@ -17,7 +17,6 @@ app.use(`${BASE_URL}/facilities`, verifyAuth, facilityRoutes)
 app.post(`${BASE_URL}/init-db`, test_db)
 app.get(`${BASE_URL}/health`, healthCheck);
 
-
 app.use((error: IErrorResponse, _req: Request, res: Response, next: NextFunction) => {
   if (error instanceof BaseError) {
     res.status(error.statusCode).json(error.toJSON);
