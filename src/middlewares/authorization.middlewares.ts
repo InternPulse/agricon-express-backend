@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-  import jwt from 'jsonwebtoken';
 import { Facility, UserRole } from '../types/types';
-import { BadRequestError, UnauthorizedError } from '../errors/errors';
-import { config } from '../config/config.env';
+import { UnauthorizedError } from '../errors/errors';
 import prisma from '../database';
 
 declare global {
@@ -31,16 +29,16 @@ export const isAnOperator = (req: Request, res: Response, next: NextFunction) =>
   next();
 }
 
-export const isFacilityOwner = async (req: Request, res: Response, next: NextFunction) => {
+export const isFacilityOwner = async (req: Request, _res: Response, next: NextFunction) => {
    const facilityId = req.params.facilityId;
    const currentUserId = req.currentUser?.id; 
 
   try {
-    const facility = await prisma.facility.findUnique({
-      where: { id: facilityId, operatorId: currentUserId }
+   const facility = await prisma.facility.findUnique({
+      where: { id: facilityId },
     });
 
-    if (!facility) {
+    if (!facility || facility.operatorId !== currentUserId) {
       throw new UnauthorizedError({message: "must be the facility operator", from: "isFacilityOwner middleware"})
     }
 

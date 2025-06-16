@@ -1,5 +1,6 @@
 import { BadRequestError } from "../../errors/errors";
 import prisma from "../../database";
+import { Facility, FacilityUpdateData } from "../../types/types";
 
 export const get = async (facilityId: string) => {
   try {
@@ -16,16 +17,22 @@ export const get = async (facilityId: string) => {
   }
 }
 
-export const update = async (facilityId: string, data: any) => {
+export const update = async (facilityId: string, data: FacilityUpdateData) => {
   try {
-    const updatedFacility = await prisma.facility.update({
+  // Transform 'type' property if present to match Prisma's update format
+  const updateData = { ...data } as any;
+  if (updateData.type !== undefined) {
+    updateData.type = { set: updateData.type };
+  }
+
+  const updatedFacility = await prisma.facility.update({
     where: {
       id: facilityId,
     },
-    data,
+    data: updateData,
   });
-  
-    return updatedFacility;
+
+  return updatedFacility;
 
   } catch (error) {
     throw new BadRequestError({message: `Error updating facility with ID ${facilityId}: ${error}`, from: "update()"});

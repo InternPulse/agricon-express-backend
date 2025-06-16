@@ -121,3 +121,13 @@ export interface Transaction {
 
   booking: Booking;
 }
+
+export interface FacilityUpdateData {
+  location: string;
+  address: string;
+  cost: number;
+  type: FacilityType;
+  available: boolean;
+  contact: string;
+  description: string | null;
+}
