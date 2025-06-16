@@ -84,11 +84,23 @@ export interface Facility {
   available: boolean;
   contact: string;
   description: string | null;
+  capacity: number; // Optional field for capacity
   createdAt: Date;
   updatedAt: Date;
 
   operator: Operator;
   bookings: Booking[];
+}
+
+export interface FacilityUpdateData {
+  location: string;
+  address: string;
+  cost: number;
+  type: FacilityType;
+  available: boolean;
+  contact: string;
+  description: string | null;
+  capacity?: number; // Optional field for capacity
 }
 
 export interface Booking {
@@ -122,12 +134,3 @@ export interface Transaction {
   booking: Booking;
 }
 
-export interface FacilityUpdateData {
-  location: string;
-  address: string;
-  cost: number;
-  type: FacilityType;
-  available: boolean;
-  contact: string;
-  description: string | null;
-}

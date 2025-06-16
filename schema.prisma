@@ -66,6 +66,7 @@ model Facility {
   cost        Float
   type        FacilityType
   available   Boolean    @default(true)
+  capacity    Int
   contact     String
   description String?
   bookings    Booking[]

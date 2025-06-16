@@ -1,6 +1,6 @@
 import { BadRequestError } from "../../errors/errors";
 import prisma from "../../database";
-import { Facility, FacilityUpdateData } from "../../types/types";
+import { FacilityUpdateData } from "../../types/types";
 
 export const get = async (facilityId: string) => {
   try {
@@ -19,8 +19,7 @@ export const get = async (facilityId: string) => {
 
 export const update = async (facilityId: string, data: FacilityUpdateData) => {
   try {
-  // Transform 'type' property if present to match Prisma's update format
-  const updateData = { ...data } as any;
+  const updateData = { ...data } as unknown as any;
   if (updateData.type !== undefined) {
     updateData.type = { set: updateData.type };
   }
