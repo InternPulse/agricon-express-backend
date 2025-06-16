@@ -3,6 +3,7 @@ import bookingRoutes from './routes/booking.routes';
 import facilityRoutes from './routes/facility.routes';
 import { BaseError, IErrorResponse } from './errors/errors';
 import { verifyAuth } from './middlewares/authenticate.middleware';
+import { healthCheck, test_db } from './test_database.ts/test_db';
 
 const app = express();
 
@@ -11,6 +12,10 @@ const BASE_URL = '/api/v1';
 app.use(express.json());
 app.use(`${BASE_URL}/bookings`, verifyAuth, bookingRoutes)
 app.use(`${BASE_URL}/facilities`, verifyAuth, facilityRoutes)
+
+//endpoints to test db connection
+app.post(`${BASE_URL}/init-db`, test_db)
+app.get(`${BASE_URL}/health`, healthCheck);
 
 app.use((error: IErrorResponse, _req: Request, res: Response, next: NextFunction) => {
   if (error instanceof BaseError) {
