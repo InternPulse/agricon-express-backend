@@ -6,6 +6,6 @@ const router = express.Router();
 
 // router.post('/create-booking', createBooking);
 router.delete('/:bookingId', deleteBooking);
-router.get('/my-bookings', listFarmerBookings);
+router.get('/farmer-bookings', listFarmerBookings);
 
 export default router;
