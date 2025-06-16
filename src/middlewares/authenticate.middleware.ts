@@ -36,6 +36,9 @@ export const verifyAuth = (req: Request, _res: Response, next: NextFunction): vo
   // mock authentication for demonstration purposes
   req.currentUser = MOCK_USER[Math.floor(Math.random() * MOCK_USER.length)];
   next();
+  // remove this line below(return statement) when done testing mock data
+  // return; 
+
   // end of mock authentication
   const authHeader = req.headers.authorization;
 

@@ -17,8 +17,11 @@ export class BaseError extends Error {
   statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
   from = "Server";
 
-  constructor(message: string) {
+  constructor(message: string, statusCode?: number) {
     super(message);
+    if (statusCode) {
+      this.statusCode = statusCode;
+    }
   }
   toJSON() {
     return {
