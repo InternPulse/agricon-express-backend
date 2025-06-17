@@ -1,6 +1,23 @@
 import { BadRequestError } from "../../errors/errors";
 import prisma from "../../database";
-import { FacilityUpdateData } from "../../types/types";
+import { Facility, FacilityUpdateData } from "../../types/types";
+
+
+export const create = async (data: Facility) => {
+  try {
+    const facilityData = { ...data } as unknown as any;
+    const newFacility = await prisma.facility.create({ 
+      data : facilityData,
+    });
+
+    return newFacility;
+
+  } catch (error) {
+    throw new BadRequestError({
+      message: `Error creating facility: ${error}`, from: "create()",
+    });
+  }
+};
 
 export const get = async (facilityId: string) => {
   try {
