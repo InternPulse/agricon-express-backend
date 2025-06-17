@@ -1,5 +1,5 @@
+import { prisma } from "../../config/config.db";
 import { BadRequestError } from "../../errors/errors";
-import prisma from "../../database";
 import { FacilityUpdateData } from "../../types/types";
 
 export const get = async (facilityId: string) => {

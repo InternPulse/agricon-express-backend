@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Facility, UserRole } from '../types/types';
 import { UnauthorizedError } from '../errors/errors';
-import prisma from '../database';
+import { prisma } from '../config/config.db';
 
 declare global {
     namespace Express {
