@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Facility, UserRole } from '../types/types';
-import { UnauthorizedError } from '../errors/errors';
+import { UnauthorizedError, BaseError } from '../errors/errors';
+import { mockBookings } from '../data/mockBookings';
 import prisma from '../database';
 
 declare global {
@@ -49,3 +50,28 @@ export const isFacilityOwner = async (req: Request, _res: Response, next: NextFu
     throw new UnauthorizedError({message: `Server error ${error}`, from: "isFacilityOwner middleware"})
   }
 }
+
+export const checkBookingOwnership = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    const farmerId = req.currentUser.id;
+
+    const booking = mockBookings.find(b => b.id === bookingId);
+
+    if (!booking) {
+      throw new BaseError('Booking not found', 404);
+    }
+
+    if (booking.farmerId !== farmerId) {
+      throw new BaseError('Unauthorized to access this booking', 403);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};

@@ -33,9 +33,31 @@ declare global {
 
 
 export const verifyAuth = (req: Request, _res: Response, next: NextFunction): void => {
-  // mock authentication for demonstration purposes
-  req.currentUser = MOCK_USER[Math.floor(Math.random() * MOCK_USER.length)];
+  // Mock authentication for demonstration purposes
+  
+  // Check for X-Mock-User header to control which user to use
+  const mockUserId = req.headers['x-mock-user'] as string;
+  
+  let selectedUser;
+  if (mockUserId) {
+    // Use specific user if header is provided
+    selectedUser = MOCK_USER.find(user => user.id === mockUserId);
+    if (!selectedUser) {
+      throw new BadRequestError({
+        message: `Mock user '${mockUserId}' not found. Available: ${MOCK_USER.map(u => u.id).join(', ')}`, 
+        from: "verifyAuth()"
+      });
+    }
+  } else {
+   // Random selection if no header specified
+  selectedUser = MOCK_USER[Math.floor(Math.random() * MOCK_USER.length)];
+  }
+  console.log(`🎲 Random user selected: ${selectedUser.id}`); 
+  req.currentUser = selectedUser;
   next();
+  // remove this line below(return statement) when done testing mock data
+  // return; 
+
   // end of mock authentication
   const authHeader = req.headers.authorization;
 
