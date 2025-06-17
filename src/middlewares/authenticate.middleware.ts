@@ -5,18 +5,18 @@ import { BadRequestError, UnauthorizedError } from '../errors/errors';
 import { config } from '../config/config.env';
 
 
-const MOCK_USER = [
-    {
-        id: 'farmer-1',
-        email: 'farmer@example.com',
-        role: UserRole.FARMER
-    },
-    {
-      id: 'owner-1',
-      email: 'owner@example.com',
-      role: UserRole.OPERATOR
-    }
-];
+// const MOCK_USER = [
+//     {
+//         id: 'farmer-1',
+//         email: 'farmer@example.com',
+//         role: UserRole.FARMER
+//     },
+//     {
+//       id: 'owner-1',
+//       email: 'owner@example.com',
+//       role: UserRole.OPERATOR
+//     }
+// ];
 
 
 declare global {
@@ -33,10 +33,6 @@ declare global {
 
 
 export const verifyAuth = (req: Request, _res: Response, next: NextFunction): void => {
-  // mock authentication for demonstration purposes
-  req.currentUser = MOCK_USER[Math.floor(Math.random() * MOCK_USER.length)];
-  next();
-  // end of mock authentication
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -44,13 +40,17 @@ export const verifyAuth = (req: Request, _res: Response, next: NextFunction): vo
   }
 
   const token = authHeader.split(' ')[1];
-
+  if (!config.JWT_SECRET || typeof config.JWT_SECRET !== 'string') {
+    throw new BadRequestError({message: `JWT auth error`, from: "authenticateJWT()"});
+  }
   try {
-    const decoded = jwt.verify(token, config.JWT_SECRET);
+    const decoded = jwt.verify(token, config.JWT_SECRET as string);
     req.currentUser = decoded as { id: string; email: string; role: UserRole };
+
+    console.log(`Authenticated user:`, decoded);
     next();
   } catch (err) {
-    throw new BadRequestError({message: `JWT auth error${err}`, from: "authenticateJWT()"});
+    throw new BadRequestError({message: `JWT auth error: ${err}`, from: "authenticateJWT()"});
   }
 };
 
