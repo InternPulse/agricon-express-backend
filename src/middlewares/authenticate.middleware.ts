@@ -56,7 +56,7 @@ export const verifyAuth = (req: Request, _res: Response, next: NextFunction): vo
   req.currentUser = selectedUser;
   next();
   // remove this line below(return statement) when done testing mock data
-  return; 
+  // return; 
 
   // end of mock authentication
   const authHeader = req.headers.authorization;
