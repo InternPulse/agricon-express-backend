@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client';
-import { CreateBookingRequest } from '../controllers/booking.controller';
+import { CreateBookingRequest } from '../controllers/createbooking.controller';
+// import { CreateBookingRequest } from '../controllers/booking.controller';
 // import { CreateBookingRequest } from '../types';
 
 const prisma = new PrismaClient();
