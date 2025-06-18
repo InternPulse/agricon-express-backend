@@ -19,6 +19,7 @@ export const get = async (facilityId: string) => {
 
 export const update = async (facilityId: string, data: FacilityUpdateData) => {
   try {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData = { ...data } as unknown as any;
   if (updateData.type !== undefined) {
     updateData.type = { set: updateData.type };
