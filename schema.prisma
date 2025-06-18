@@ -81,6 +81,18 @@ model Booking {
   updatedAt  DateTime   @updatedAt
 }
 
+model Transaction {
+  id           String            @id @default(uuid())
+  bookingId    String            @unique
+  booking      Booking           @relation(fields: [bookingId], references: [id])
+  reason       TransactionReason
+  paymentMethod String
+  amount       Float
+  status       TransactionStatus @default(PENDING)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
 // == MODEL IMPLEMENTATIONS FOR BACKUP
 // model User {
 //   id                     String    @id @default(uuid())
@@ -125,14 +137,3 @@ model Booking {
 //   updatedAt    DateTime   @updatedAt
 // }
 
-// model Transaction {
-//   id           String            @id @default(uuid())
-//   bookingId    String            @unique
-//   booking      Booking           @relation(fields: [bookingId], references: [id])
-//   reason       TransactionReason
-//   paymentMethod String
-//   amount       Float
-//   status       TransactionStatus @default(PENDING)
-//   createdAt    DateTime          @default(now())
-//   updatedAt    DateTime          @updatedAt
-// }

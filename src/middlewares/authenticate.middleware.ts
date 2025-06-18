@@ -1,23 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-  import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { UserRole } from '../types/types';
 import { BadRequestError, UnauthorizedError } from '../errors/errors';
 import { config } from '../config/config.env';
-
-
-// const MOCK_USER = [
-//     {
-//         id: 'farmer-1',
-//         email: 'farmer@example.com',
-//         role: UserRole.FARMER
-//     },
-//     {
-//       id: 'owner-1',
-//       email: 'owner@example.com',
-//       role: UserRole.OPERATOR
-//     }
-// ];
-
 
 declare global {
     namespace Express {
@@ -44,13 +29,17 @@ export const verifyAuth = (req: Request, _res: Response, next: NextFunction): vo
     throw new BadRequestError({message: `JWT auth error`, from: "authenticateJWT()"});
   }
   try {
-    const decoded = jwt.verify(token, config.JWT_SECRET as string);
-    req.currentUser = decoded as { id: string; email: string; role: UserRole };
+    const decoded = jwt.verify(token, config.JWT_SECRET as string) as { user_id: string; email: string; role: UserRole };;
+    const decodeUser = {
+      id: decoded.user_id,
+      email: decoded.email,
+      role: decoded.role
+    };
 
-    console.log(`Authenticated user:`, decoded);
+    req.currentUser = decodeUser;
     next();
-  } catch (err) {
-    throw new BadRequestError({message: `JWT auth error: ${err}`, from: "authenticateJWT()"});
+  } catch {
+    throw new BadRequestError({message: `JWT auth error`, from: "authenticateJWT()"});
   }
 };
 
