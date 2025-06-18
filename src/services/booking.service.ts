@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { CreateBookingRequest } from "../controllers/createbooking.controller";
 
 const prisma = new PrismaClient();

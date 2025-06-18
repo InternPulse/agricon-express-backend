@@ -41,8 +41,9 @@ export const verifyAuth = (req: Request, _res: Response, next: NextFunction): vo
 
     req.currentUser = decodeUser;
     next();
-  } catch(err: any) {
-    console.log("JWT error:", err.message);
+    
+  } catch(err) {
+    console.log("JWT error:", err);
   throw new BadRequestError({
     message: `JWT auth error, Try Authenticating`,
     from: "authenticateJWT()"

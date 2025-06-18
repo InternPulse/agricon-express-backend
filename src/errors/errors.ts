@@ -55,3 +55,19 @@ export class UnauthorizedError extends BaseError {
     this.from = from;
   }
 }
+
+export interface ValidationErrorDetail {
+  field: string;
+  message: string;
+}
+
+export class BookingValidationError extends Error {
+  public readonly name = 'ValidationError';
+  public readonly errors: ValidationErrorDetail[];
+
+  constructor(message: string, errors: ValidationErrorDetail[]) {
+    super(message);
+    this.errors = errors;
+    Object.setPrototypeOf(this, BookingValidationError.prototype);
+  }
+}

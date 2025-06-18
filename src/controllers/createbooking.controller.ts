@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { createBooking } from '../services/booking.service';
 import { UserRole } from '../types/types';
+import { BookingValidationError } from '../errors/errors';
 
 export interface CreateBookingRequest {
   facilityId: string |number |bigint;
@@ -64,40 +65,14 @@ export const createBookingHandler = async (req: Request, res: Response): Promise
       message: 'Booking created successfully',
       data: booking,
     });
+  
+  } catch (error) {
+    // Re-throw our custom errors
+    if (error instanceof BookingValidationError) {
+      throw error;
+    }
     
-  } catch (error: any) {
-    if (res.headersSent) return;
-
-    if (error.name === 'ValidationError') {
-     res.status(400).json({
-        success: false,
-        message: error.message,
-        errors: error.errors,
-      });
-       return 
-    }
-
-    if (error.name === 'NotFoundError') {
-      res.status(404).json({
-        success: false,
-        message: error.message,
-      });
-      return 
-    }
-
-    if (error.name === 'ConflictError') {
-      res.status(409).json({
-        success: false,
-        message: error.message,
-      });
-      return 
-    }
-
-    console.error('Booking error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create a booking',
-    });
-    return 
+    console.log("Failed to create booking", error);
+    throw new Error("Database operation failed");
   }
 };
