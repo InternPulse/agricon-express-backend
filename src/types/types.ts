@@ -46,7 +46,7 @@ export interface User {
 }
 
 export interface Farmer {
-  id: string;
+  id: bigint;
   userId: string;
   firstName: string;
   lastName: string;
@@ -60,7 +60,7 @@ export interface Farmer {
 }
 
 export interface Operator {
-  id: string;
+  id: bigint;
   userId: string;
   businessName: string;
   firstName: string;
@@ -75,8 +75,8 @@ export interface Operator {
 }
 
 export interface Facility {
-  id: string;
-  operatorId: string;
+  id: bigint;
+  operatorId: bigint;
   location: string;
   address: string;
   cost: number;
@@ -104,9 +104,9 @@ export interface FacilityUpdateData {
 }
 
 export interface Booking {
-  id: string;
-  facilityId: string;
-  farmerId: string;
+  id: bigint;
+  facilityId: bigint;
+  farmerId: bigint;
   amount: number;
   paid: boolean;
   active: boolean;
@@ -122,8 +122,8 @@ export interface Booking {
 }
 
 export interface Transaction {
-  id: string;
-  bookingId: string;
+  id: bigint;
+  bookingId: bigint;
   reason: TransactionReason;
   paymentMethod: string;
   amount: number;

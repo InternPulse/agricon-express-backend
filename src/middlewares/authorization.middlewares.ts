@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { Facility, UserRole } from '../types/types';
+import { prisma } from '../config/config.db';
 import { UnauthorizedError, BaseError } from '../errors/errors';
 import { mockBookings } from '../data/mockBookings';
-import prisma from '../database';
 
 declare global {
     namespace Express {
@@ -31,15 +31,16 @@ export const isAnOperator = (req: Request, res: Response, next: NextFunction) =>
 }
 
 export const isFacilityOwner = async (req: Request, _res: Response, next: NextFunction) => {
-   const facilityId = req.params.facilityId;
-   const currentUserId = req.currentUser?.id; 
+   const facilityId = Number(req.params.facilityId);
+   const operatorId = req.operator?.id; 
 
   try {
-   const facility = await prisma.facility.findUnique({
-      where: { id: facilityId },
-    });
 
-    if (!facility || facility.operatorId !== currentUserId) {
+    const facility = await prisma.facility.findUnique({
+      where: { id: facilityId }
+    })
+    
+    if (!facility || facility.operatorId !== operatorId) {
       throw new UnauthorizedError({message: "must be the facility operator", from: "isFacilityOwner middleware"})
     }
 
