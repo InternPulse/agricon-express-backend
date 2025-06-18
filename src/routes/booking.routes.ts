@@ -13,7 +13,7 @@ const router = express.Router();
 
 // DELETE /api/bookings/:bookingId - Delete a specific booking
 router.delete('/:bookingId', validateBookingId, checkBookingOwnership, deleteBooking);
-router.post('/create-booking',verifyAuth, authorizeRole([UserRole.FARMER, UserRole.OPERATOR]), createBookingHandler)
+router.post('/create-booking', verifyAuth, authorizeRole([UserRole.FARMER, UserRole.OPERATOR]), createBookingHandler)
 
 router.get('/', listFarmerBookings);
 
