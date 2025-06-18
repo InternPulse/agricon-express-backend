@@ -2,7 +2,7 @@ import { prisma } from "../../config/config.db";
 import { BadRequestError, NotFoundError } from "../../errors/errors";
 import { FacilityUpdateData } from "../../types/types";
 
-export const get = async (facilityId: string) => {
+export const get = async (facilityId: bigint) => {
   try {
     const facility = await prisma.facility.findUnique({
       where: { id: facilityId }
@@ -17,7 +17,7 @@ export const get = async (facilityId: string) => {
   }
 }
 
-export const update = async (facilityId: string, data: FacilityUpdateData) => {
+export const update = async (facilityId: bigint, data: FacilityUpdateData) => {
   try {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData = { ...data } as unknown as any;
