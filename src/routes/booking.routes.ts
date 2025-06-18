@@ -1,33 +1,11 @@
-// import express from 'express';
-// import { CreateBookingController } from '../controllers/booking.controller';
-
-// const router = express.Router();
-
-// router.post('/create', async (req, res) => {
-//     try {
-//         const result = await CreateBookingController.createBooking(req.body);
-
-//         if (result.success) {
-//             res.status(201).json(result);
-//         } else {
-//             res.status(400).json(result);
-//         }
-//         } catch (error) {
-//             res.status(500).json({
-//                 success: false,
-//                 message: 'Internal server error',
-//             });
-//         }
-//     });
-
-// export default router;
-
 
 import express from 'express';
 import { deleteBooking, listFarmerBookings } from '../controllers/booking.controller';
 import { validateBookingId } from '../middlewares/bookingValidation';
-import { checkBookingOwnership } from '../middlewares/authorization.middlewares';
-// import { createBooking, } from '../controllers/booking.controller';
+import { authorizeRole, checkBookingOwnership } from '../middlewares/authorization.middlewares';
+import { UserRole } from '../types/types';
+import { createBookingHandler } from '../controllers/createbooking.controller';
+import { verifyAuth } from '../middlewares/authenticate.middleware';
 
 const router = express.Router();
 
@@ -35,6 +13,7 @@ const router = express.Router();
 
 // DELETE /api/bookings/:bookingId - Delete a specific booking
 router.delete('/:bookingId', validateBookingId, checkBookingOwnership, deleteBooking);
+router.post('/create-booking',verifyAuth, authorizeRole([UserRole.FARMER, UserRole.OPERATOR]), createBookingHandler)
 
 router.get('/', listFarmerBookings);
 

@@ -1,23 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-  import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { UserRole } from '../types/types';
 import { BadRequestError, UnauthorizedError } from '../errors/errors';
 import { config } from '../config/config.env';
-
-
-const MOCK_USER = [
-    {
-        id: 'farmer-1',
-        email: 'farmer@example.com',
-        role: UserRole.FARMER
-    },
-    {
-      id: 'owner-1',
-      email: 'owner@example.com',
-      role: UserRole.OPERATOR
-    }
-];
-
 
 declare global {
     namespace Express {
@@ -33,10 +18,6 @@ declare global {
 
 
 export const verifyAuth = (req: Request, _res: Response, next: NextFunction): void => {
-  // mock authentication for demonstration purposes
-  req.currentUser = MOCK_USER[Math.floor(Math.random() * MOCK_USER.length)];
-  next();
-  // end of mock authentication
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -44,13 +25,28 @@ export const verifyAuth = (req: Request, _res: Response, next: NextFunction): vo
   }
 
   const token = authHeader.split(' ')[1];
-
+  if (!config.JWT_SECRET || typeof config.JWT_SECRET !== 'string') {
+    throw new BadRequestError({message: `JWT auth error, No token`, from: "authenticateJWT()"});
+  }
+  console.log(config.JWT_SECRET)
   try {
-    const decoded = jwt.verify(token, config.JWT_SECRET);
-    req.currentUser = decoded as { id: string; email: string; role: UserRole };
+    const decoded = jwt.verify(token, config.JWT_SECRET as string) as { user_id: string; email: string; role: UserRole };
+    const decodeUser = {
+      id: decoded.user_id,
+      email: decoded.email,
+      role: decoded.role
+    };
+
+    console.log("Decoded JWT:", decoded);
+
+    req.currentUser = decodeUser;
     next();
-  } catch (err) {
-    throw new BadRequestError({message: `JWT auth error${err}`, from: "authenticateJWT()"});
+  } catch(err: any) {
+    console.log("JWT error:", err.message);
+  throw new BadRequestError({
+    message: `JWT auth error, Try Authenticating`,
+    from: "authenticateJWT()"
+  });
   }
 };
 

@@ -1,10 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { Facility, UserRole } from '../types/types';
-// import { UnauthorizedError } from '../errors/errors';
-// import { prisma } from '../config/config.db';
+import { prisma } from '../config/config.db';
 import { UnauthorizedError, BaseError } from '../errors/errors';
 import { mockBookings } from '../data/mockBookings';
-import prisma from '../database';
 
 declare global {
     namespace Express {
@@ -16,7 +14,9 @@ declare global {
 // Role Middleware
 export const authorizeRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if(!roles.includes(req.currentUser .role)){
+    if(!roles.includes(req.currentUser?.role)){
+      console.log(req.currentUser.role)
+      console.log(req.currentUser.email)
       throw new UnauthorizedError({message: "unauthorized", from: "authorization middleware"})
     };
     next();
@@ -33,9 +33,9 @@ export const isFacilityOwner = async (req: Request, _res: Response, next: NextFu
    const currentUserId = req.currentUser?.id; 
   try {
    const facility = await prisma.facility.findUnique({
-      where: { id: facilityId },
+      where: { id: BigInt(facilityId) },
     });
-    if (!facility || facility.operatorId !== currentUserId) {
+    if (!facility || facility.operatorId !== BigInt(currentUserId)) {
       throw new UnauthorizedError({message: "must be the facility operator", from: "isFacilityOwner middleware"})
     }
     req.facility = facility as unknown as Facility; // Attach facility to request object
