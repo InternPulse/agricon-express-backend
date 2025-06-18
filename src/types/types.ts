@@ -29,7 +29,7 @@ export enum TransactionStatus {
 
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
   password: string;
   role: UserRole;
@@ -46,7 +46,7 @@ export interface User {
 }
 
 export interface Farmer {
-  id: string;
+  id: number;
   userId: string;
   firstName: string;
   lastName: string;
@@ -60,7 +60,7 @@ export interface Farmer {
 }
 
 export interface Operator {
-  id: string;
+  id: number;
   userId: string;
   businessName: string;
   firstName: string;
@@ -75,8 +75,8 @@ export interface Operator {
 }
 
 export interface Facility {
-  id: string;
-  operatorId: string;
+  id: number;
+  operatorId: number;
   location: string;
   address: string;
   cost: number;
@@ -104,9 +104,9 @@ export interface FacilityUpdateData {
 }
 
 export interface Booking {
-  id: string;
-  facilityId: string;
-  farmerId: string;
+  id: number;
+  facilityId: number;
+  farmerId: number;
   amount: number;
   paid: boolean;
   active: boolean;
