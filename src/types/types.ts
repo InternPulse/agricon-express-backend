@@ -29,7 +29,7 @@ export enum TransactionStatus {
 
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
   password: string;
   role: UserRole;
@@ -122,8 +122,8 @@ export interface Booking {
 }
 
 export interface Transaction {
-  id: string;
-  bookingId: string;
+  id: number;
+  bookingId: number;
   reason: TransactionReason;
   paymentMethod: string;
   amount: number;
