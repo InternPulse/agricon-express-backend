@@ -14,7 +14,7 @@ declare global {
 // Role Middleware
 export const authorizeRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if(!roles.includes(req.currentUser .role)){
+    if(!roles.includes(req.currentUser.role)){
       throw new UnauthorizedError({message: "unauthorized", from: "authorization middleware"})
     };
     next();
@@ -22,7 +22,7 @@ export const authorizeRole = (roles: UserRole[]) => {
 }
 
 export const isAnOperator = (req: Request, res: Response, next: NextFunction) => {
-  if(!req.currentUser || req.currentUser.role !== UserRole.OPERATOR) {
+  if(!req.currentUser || req.currentUser.role !== UserRole.INFRA_OWNER) {
     throw new UnauthorizedError({message: "user must be a registered operator", from: "isAnOperator middleware"})
   }
 

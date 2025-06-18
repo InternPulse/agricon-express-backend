@@ -20,6 +20,7 @@ app.get(`${BASE_URL}/health`, healthCheck);
 app.use((error: IErrorResponse, _req: Request, res: Response, next: NextFunction) => {
   if (error instanceof BaseError) {
     res.status(error.statusCode).json(error.toJSON);
+    return
   }
   next();
 });

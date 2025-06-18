@@ -2,7 +2,7 @@
 
 export enum UserRole {
   FARMER,
-  OPERATOR,
+  INFRA_OWNER,
   ADMIN,
 }
 
