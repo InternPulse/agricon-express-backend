@@ -1,5 +1,9 @@
-import express from 'express';
+import { Router } from "express";
+import { listBookings } from "../controllers/booking.controller";
+import { verifyAuth } from "../middlewares/authenticate.middleware";
 
-const router = express.Router();
+const router = Router();
+
+router.get("/bookings", verifyAuth, listBookings);
 
 export default router;
