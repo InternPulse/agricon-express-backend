@@ -53,7 +53,7 @@ export const verifyAuth = async (
     };
 
     if (decodeUser.role === UserRole.OPERATOR) {
-      const operator = await prisma.operator.findUnique({
+      const operator = await prisma.operator.findFirst({
         where: { user_id: decodeUser.id } // user_id is unique
       });
       if (operator) {
@@ -63,7 +63,7 @@ export const verifyAuth = async (
         return;
       }
     } else if (decodeUser.role === UserRole.FARMER) {
-      const farmer = await prisma.farmer.findUnique({
+      const farmer = await prisma.farmer.findFirst({
         where: { user_id: decodeUser.id } // user_id is unique
       });
 
@@ -73,10 +73,15 @@ export const verifyAuth = async (
         next();
         return;
       }
-    }
-  } catch {
+   }
+
     throw new BadRequestError({
-      message: `JWT auth error`,
+      message: `unauthorized`,
+      from: "authenticateJWT()"
+    });
+  } catch(error) {
+    throw new BadRequestError({
+      message: `${error}`,
       from: "authenticateJWT()"
     });
   }
