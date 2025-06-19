@@ -1,8 +1,37 @@
 import { NextFunction, Request, Response } from 'express';
-import { BaseError } from '../errors/errors';
+import { BadRequestError, BaseError } from '../errors/errors';
 import { mockBookings } from '../data/mockBookings';
 import { filterBookings } from '../utils/bookingFilters';
-import { deleteBooking, getBookingById } from '../services/booking.service';
+import { createBooking, deleteBooking, getBookingById } from '../services/booking.service';
+import { CreateBookingParams } from '../types/types';
+import { StatusCodes } from 'http-status-codes';
+
+export const createBookingHandler = async (req: Request, res: Response): Promise<void> => {
+
+  try {
+    const bookingData: CreateBookingParams = {
+        facilityId: req.body.facilityId,
+        farmerId: req.body.farmerId,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+        amount: req.body.amount,
+      };
+
+    const booking = await createBooking(bookingData);
+
+    res.status(StatusCodes.CREATED).json({
+      success: true,
+      message: 'Booking created successfully',
+      data: booking,
+    });
+  
+  } catch (error) {
+    throw new BadRequestError({
+      message: error instanceof Error ? error.message : 'An error occurred while creating the booking',
+      from: "createBookingHandler()",
+    });
+  }
+};
 
 export const deleteBookingHandler = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -64,19 +93,10 @@ export const listFarmerBookings = async (req: Request, res: Response): Promise<v
   }
 };
 
-
-
-
-
-
-
-
-
 export const fetchBooking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { bookingId } = req.params;
     const booking = await getBookingById(BigInt(bookingId));
-    console.log(booking)
 
     if (!booking) {
       res.status(404).json({
@@ -85,7 +105,6 @@ export const fetchBooking = async (req: Request, res: Response, next: NextFuncti
       });
     }
 
-   
     res.status(200).json({
       status: 'success',
       data: booking,

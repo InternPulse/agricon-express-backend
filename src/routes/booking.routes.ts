@@ -1,20 +1,16 @@
 import express from 'express';
-import {deleteBookingHandler, fetchBooking, listFarmerBookings } from '../controllers/booking.controller';
 import { validateBookingId } from '../middlewares/bookingValidation';
-import { authorizeRole, checkBookingOwnership } from '../middlewares/authorization.middlewares';
-import { UserRole } from '../types/types';
-import { createBookingHandler } from '../controllers/createbooking.controller';
+import { isFarmer } from '../middlewares/authorization.middlewares';
 import { verifyAuth } from '../middlewares/authenticate.middleware';
 import { updateBookingHandler } from '../controllers/updatebooking.controller';
+import { createBookingHandler, deleteBookingHandler, fetchBooking, listFarmerBookings } from '../controllers/booking.controller';
 
 const router = express.Router();
 
-router.delete('/:bookingId', validateBookingId, checkBookingOwnership, deleteBookingHandler);
-router.post('/create-booking', verifyAuth, authorizeRole([UserRole.FARMER, UserRole.OPERATOR]), createBookingHandler)
-router.patch('/:bookingId', verifyAuth, validateBookingId,  updateBookingHandler);
+router.post('/', verifyAuth, isFarmer, createBookingHandler)
+router.get('/farmer', listFarmerBookings);
 router.get('/:bookingId', verifyAuth, validateBookingId, fetchBooking)
-router.delete('/:bookingId', verifyAuth, validateBookingId, deleteBookingHandler)
-
-router.get('/', listFarmerBookings);
+router.patch('/:bookingId', verifyAuth, validateBookingId,  updateBookingHandler);
+router.delete('/:bookingId', validateBookingId, deleteBookingHandler);
 
 export default router;
