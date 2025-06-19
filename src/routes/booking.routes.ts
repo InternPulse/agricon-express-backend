@@ -1,18 +1,16 @@
 import express from 'express';
-import { deleteBooking, listFarmerBookings } from '../controllers/booking.controller';
 import { validateBookingId } from '../middlewares/bookingValidation';
-import { authorizeRole } from '../middlewares/authorization.middlewares';
-import { createBookingHandler } from '../controllers/createbooking.controller';
+import { isFarmer } from '../middlewares/authorization.middlewares';
 import { verifyAuth } from '../middlewares/authenticate.middleware';
 import { updateBookingHandler } from '../controllers/updatebooking.controller';
+import { createBookingHandler, deleteBookingHandler, fetchBooking, listFarmerBookings } from '../controllers/booking.controller';
 
 const router = express.Router();
 
-router.delete('/:bookingId', validateBookingId, deleteBooking);
-router.post('/create-booking', verifyAuth, authorizeRole, createBookingHandler)
+router.post('/', verifyAuth, isFarmer, createBookingHandler)
+router.get('/farmer', listFarmerBookings);
+router.get('/:bookingId', verifyAuth, validateBookingId, fetchBooking)
 router.patch('/:bookingId', verifyAuth, validateBookingId,  updateBookingHandler);
-//router.get('/:bookingId', verifyAuth, validateBookingId, fetchBooking)
-
-router.get('/', listFarmerBookings);
+router.delete('/:bookingId', validateBookingId, deleteBookingHandler);
 
 export default router;

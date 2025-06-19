@@ -1,5 +1,4 @@
-import { CreateBookingRequest } from "../controllers/createbooking.controller";
-import { BookingStatus } from "../types/types";
+import { BookingStatus, CreateBookingParams } from "../types/types";
 import { PrismaClient, Booking as PrismaBooking, Facility, Farmer } from '@prisma/client';
 
 
@@ -12,7 +11,7 @@ export interface Booking extends PrismaBooking {
 
 
 
-const validateBookingRequest = (data: CreateBookingRequest) => {
+const validateBookingRequest = (data: CreateBookingParams) => {
   const errors: { field: string; message: string }[] = [];
 
   if (!data.facilityId) {
@@ -58,7 +57,7 @@ const calculateBookingAmount = (
   return costPerDay * days;
 };
 
-export const createBooking = async (data: CreateBookingRequest) => {
+export const createBooking = async (data: CreateBookingParams) => {
   validateBookingRequest(data);
   try {
     const facility = await prisma.facility.findUnique({
