@@ -17,7 +17,7 @@ export const create = async (data: Prisma.FacilityCreateInput) => {
 export const get = async (facilityId: bigint) => {
   try {
     const facility = await prisma.facility.findUnique({
-      where: { id: facilityId }
+      where: { id: BigInt(facilityId) }
     });
 
 
@@ -41,7 +41,7 @@ export const update = async (facilityId: bigint, data: FacilityUpdateData) => {
 
   const updatedFacility = await prisma.facility.update({
     where: {
-      id: facilityId,
+      id: BigInt(facilityId),
     },
     data: updateData,
   });

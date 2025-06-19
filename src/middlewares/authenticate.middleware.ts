@@ -36,10 +36,11 @@ export const verifyAuth = async (
   const token = authHeader.split(" ")[1];
   if (!config.JWT_SECRET || typeof config.JWT_SECRET !== "string") {
     throw new BadRequestError({
-      message: `JWT auth error`,
+      message: `JWT auth error, secret key is missing or invalid`,
       from: "authenticateJWT()"
     });
   }
+  
   try {
     const decoded = jwt.verify(token, config.JWT_SECRET as string) as {
       user_id: string;
@@ -52,7 +53,6 @@ export const verifyAuth = async (
       email: decoded.email,
       role: decoded.role
     };
-  
 
     if (decodeUser.role === UserRole.OPERATOR) {
       const operator = await prisma.operator.findFirst({
@@ -91,18 +91,6 @@ export const verifyAuth = async (
         return;
       }
    }
-
-    throw new BadRequestError({
-      message: `unauthorized`,
-      from: "authenticateJWT()"
-    });
-  } catch(error) {
-    throw new BadRequestError({
-      message: `${error}`,
-      from: "authenticateJWT()"
-    });
-  }
-};
 
 // Role Middleware
 export const authorizeRole = (roles: UserRole[]) => {

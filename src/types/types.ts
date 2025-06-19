@@ -2,10 +2,9 @@
 
 export enum UserRole {
   FARMER = 'FARMER',
-  OPERATOR = 'OPERATOR',
-  ADMIN = 'ADMIN',
+  OPERATOR = 'OPERATOR', 
+  ADMIN = 'ADMIN'
 }
-
 export enum FacilityType {
   DRYER,
   STORAGE,
@@ -99,6 +98,14 @@ export interface FacilityUpdateData {
   contact: string;
   description: string | null;
   capacity?: number; // Optional field for capacity
+}
+
+export enum BookingStatus{
+  ACTIVE,
+  INACTIVE,
+  PENDING,
+  CANCELED,
+  COMPLETED,
 }
 
 export interface Booking {
