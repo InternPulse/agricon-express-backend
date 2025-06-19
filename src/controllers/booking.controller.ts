@@ -1,137 +1,64 @@
 import { Request, Response } from 'express';
-import prisma from '../database';
-import { BaseError, NotFoundError, UnauthorizedError } from '../errors/errors';
+// import { PrismaClient } from '@prisma/client';
+import { BaseError } from '../errors/errors';
+import { mockBookings } from '../data/mockBookings';
+import { filterBookings } from '../utils/bookingFilters';
 
-
-const USE_MOCK = process.env.MOCK_MODE === 'true';
-console.log("MOCK_MODE:", process.env.MOCK_MODE);
-
-
-const mockBookings = [
-  {
-    id: 'booking-1',
-    farmerId: 'farmer-1',
-    facilityId: 'facility-1',
-    amount: 3000,
-    startDate: new Date(),
-    endDate: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    active: true,
-  },
-  {
-    id: 'booking-2',
-    farmerId: 'farmer-1',
-    facilityId: 'facility-2',
-    amount: 5000,
-    startDate: new Date(),
-    endDate: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    active: true,
-  },
-];
-
-export const fetchBookings = async (req: Request, res: Response): Promise<void> => {
+export const deleteBooking = async (req: Request, res: Response): Promise<void> => {
   try {
-    //const userId = req.currentUser.id;
-    const userId = USE_MOCK ? 'farmer-1' : req.currentUser.id;
 
+    // MOCK DELETION - Skip actual database deletion
+    // In real implementation: await prisma.booking.delete({ where: { id: bookingId } });
 
-    if (USE_MOCK) {
-      const userBookings = mockBookings.filter(b => b.farmerId === userId);
-      res.status(200).json({ success: true, data: userBookings });
-      return
-    }
-
-    const bookings = await prisma.booking.findMany({
-      where: { farmerId: userId },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    res.status(200).json({
-      success: true,
-      data: bookings,
-    });
+    res.status(204).send();
   } catch (error) {
-    console.error('fetchBookings error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch bookings',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-};
-
-
-export const updateBooking = async (req: Request, res: Response):Promise<void>=> {
-  try {
-    //const userId = req.currentUser.id;
-    const userId = USE_MOCK ? 'farmer-1' : req.currentUser.id;
-    const { bookingId } = req.params;
-    const { startDate, endDate, amount ,active} = req.body;
-
-    if (USE_MOCK) {
-      const booking = mockBookings.find(b => b.id === bookingId);
-
-      if (!booking) {
-        throw new NotFoundError({ message: 'Booking not found', from: 'updateBooking' });
-      }
-
-      if (booking.farmerId !== userId) {
-        throw new UnauthorizedError({ message: 'Unauthorized to update this booking', from: 'updateBooking' });
-      }
-
-      booking.startDate = startDate ? new Date(startDate) : booking.startDate;
-      booking.endDate = endDate ? new Date(endDate) : booking.endDate;
-      booking.amount = amount ?? booking.amount;
-      booking.active = typeof active === 'boolean' ? active : booking.active;
-      booking.updatedAt = new Date();
-
-     res.status(200).json({
-        success: true,
-        message: 'Booking updated (mock)',
-        data: booking,
-      });
-      return
-    }
-
-    const existingBooking = await prisma.booking.findUnique({
-      where: { id: bookingId },
-    });
-
-    if (!existingBooking) {
-      throw new NotFoundError({ message: 'Booking not found', from: 'updateBooking' });
-    }
-
-    if (existingBooking.farmerId !== userId) {
-      throw new UnauthorizedError({ message: 'Unauthorized to update this booking', from: 'updateBooking' });
-    }
-
-    const updatedBooking = await prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
-        amount,
-        updatedAt: new Date(),
-      },
-    });
-
-    res.status(200).json({
-      success: true,
-      message: 'Booking updated successfully',
-      data: updatedBooking,
-    });
-  } catch (error) {
-    console.error('updateBooking error:', error);
     if (error instanceof BaseError) {
       res.status(error.statusCode).json(error.toJSON());
     } else {
       res.status(500).json({
         success: false,
-        message: 'Failed to update booking',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+};
+
+export const listFarmerBookings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const farmerId = req.currentUser.id;
+    const { status, active, limit, offset } = req.query;
+
+    const filteredBookings = filterBookings(mockBookings, {
+      farmerId,
+      status: status as string,
+      active: active as string,
+      limit: limit ? parseInt(limit as string, 10) : undefined,
+      offset: offset ? parseInt(offset as string, 10) : 0
+    });
+
+    const farmerBookings = mockBookings.filter(booking => booking.farmerId === farmerId);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        bookings: filteredBookings,
+        total: farmerBookings.length,
+        filtered: filteredBookings.length,
+        farmer: {
+          id: farmerId,
+          role: req.currentUser.role
+        }
+      }
+    });
+  } catch (error) {
+    if (error instanceof BaseError) {
+      res.status(error.statusCode).json(error.toJSON());
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
