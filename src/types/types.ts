@@ -9,7 +9,7 @@ export enum FacilityType {
   DRYER,
   STORAGE,
   PROCESSING,
-  OTHER,
+  OTHERS,
 }
 
 export enum TransactionReason {
@@ -77,8 +77,7 @@ export interface Facility {
   id: bigint;
   operatorId: bigint;
   location: string;
-  address: string;
-  cost: number;
+  pricePerDay: number;
   type: FacilityType;
   available: boolean;
   contact: string;
@@ -88,13 +87,12 @@ export interface Facility {
   updatedAt: Date;
 
   operator: Operator;
-  bookings: Booking[];
+  bookings?: Booking[];
 }
 
 export interface FacilityUpdateData {
-  location: string;
   address: string;
-  cost: number;
+  pricePerDay: number;
   type: FacilityType;
   available: boolean;
   contact: string;
