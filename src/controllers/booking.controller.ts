@@ -1,10 +1,15 @@
-import { Request, Response } from "express";
-import { BookingService } from "../services/booking.service";
+import { Request, Response, NextFunction } from "express";
 import { BaseError } from "../errors/errors";
+import {
+  BookingService,
+  deleteBooking,
+  getBookingById,
+} from "../services/booking.service";
+import { BookingExpiryService } from "../services/bookingExpire.service";
 import { mockBookings } from "../data/mockBookings";
 import { filterBookings } from "../utils/bookingFilters";
-import { BookingExpiryService } from '../services/bookingExpire.service';
 
+// ======= COMMENTED MOCK CREATE FUNCTION (preserved) =========
 
 // import { PrismaClient } from '@prisma/client';
 // const prisma = new PrismaClient();
@@ -14,12 +19,10 @@ import { BookingExpiryService } from '../services/bookingExpire.service';
 //     const { facilityId, amount, startDate, endDate } = req.body;
 //     const farmerId = req.currentUser.id;
 
-//     // Validate required fields
 //     if (!facilityId || !amount || !startDate || !endDate) {
 //       throw new BaseError('Missing required fields', 400);
 //     }
 
-//     // MOCK FACILITY CHECK - Replace database check with mock data
 //     const mockFacilities = [
 //       { id: 'facility-1', name: 'Mock Facility 1', available: true },
 //       { id: 'facility-2', name: 'Mock Facility 2', available: true },
@@ -28,17 +31,11 @@ import { BookingExpiryService } from '../services/bookingExpire.service';
 
 //     const facility = mockFacilities.find(f => f.id === facilityId);
 
-//     if (!facility) {
-//       throw new BaseError('Facility not found', 404);
-//     }
+//     if (!facility) throw new BaseError('Facility not found', 404);
+//     if (!facility.available) throw new BaseError('Facility is not available', 400);
 
-//     if (!facility.available) {
-//       throw new BaseError('Facility is not available', 400);
-//     }
-
-//     // MOCK BOOKING CREATION - Skip database insert for now
 //     const mockBooking = {
-//       id: `booking-${Date.now()}`, // Generate a mock ID
+//       id: `booking-${Date.now()}`,
 //       facilityId,
 //       farmerId,
 //       amount,
@@ -49,10 +46,7 @@ import { BookingExpiryService } from '../services/bookingExpire.service';
 //       updatedAt: new Date()
 //     };
 
-//     res.status(201).json({
-//       success: true,
-//       data: mockBooking
-//     });
+//     res.status(201).json({ success: true, data: mockBooking });
 //   } catch (error) {
 //     if (error instanceof BaseError) {
 //       res.status(error.statusCode).json(error.toJSON());
@@ -66,90 +60,13 @@ import { BookingExpiryService } from '../services/bookingExpire.service';
 //   }
 // };
 
-export const deleteBooking = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    // MOCK DELETION - Skip actual database deletion
-    // In real implementation: await prisma.booking.delete({ where: { id: bookingId } });
-import { NextFunction, Request, Response } from 'express';
-import { BaseError } from '../errors/errors';
-import { mockBookings } from '../data/mockBookings';
-import { filterBookings } from '../utils/bookingFilters';
-import { deleteBooking, getBookingById } from '../services/booking.service';
+// ============================================================
 
-export const deleteBookingHandler = async (req: Request, res: Response): Promise<void> => {
-  try {
-
-    const { bookingId } = req.params;
-    await deleteBooking(BigInt(bookingId));
-
-    res.status(204).send();
-  } catch (error) {
-    if (error instanceof BaseError) {
-      res.status(error.statusCode).json(error.toJSON());
-    } else {
-      res.status(500).json({
-        success: false,
-        message: "Internal server error",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }
-};
-
-export const listFarmerBookings = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const farmerId = req.currentUser.id;
-    const { status, active, limit, offset } = req.query;
-
-    const filteredBookings = filterBookings(mockBookings, {
-      farmerId,
-      status: status as string,
-      active: active as string,
-      limit: limit ? parseInt(limit as string, 10) : undefined,
-      offset: offset ? parseInt(offset as string, 10) : 0,
-    });
-
-    const farmerBookings = mockBookings.filter(
-      (booking) => booking.farmerId === farmerId
-    );
-
-    res.status(200).json({
-      success: true,
-      data: {
-        bookings: filteredBookings,
-        total: farmerBookings.length,
-        filtered: filteredBookings.length,
-        farmer: {
-          id: farmerId,
-          role: req.currentUser.role,
-        },
-      },
-    });
-  } catch (error) {
-    if (error instanceof BaseError) {
-      res.status(error.statusCode).json(error.toJSON());
-    } else {
-      res.status(500).json({
-        success: false,
-        message: "Internal server error",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }
-};
-
-
-
-//// List Bookings Controller
-
+// Instance of BookingService and BookingExpiryService
 const bookingService = new BookingService();
+const expiryService = new BookingExpiryService();
 
+//  LIST BOOKINGS (for Admin/Operator)
 export const listBookings = async (
   req: Request,
   res: Response
@@ -171,18 +88,70 @@ export const listBookings = async (
     res.status(200).json({
       success: true,
       data: bookings,
-      pagination: {
-        limit,
-        offset,
+      pagination: { limit, offset },
+    });
+  } catch (error) {
+    if (error instanceof BaseError) {
+      return res.status(error.statusCode).json(error.toJSON());
+    }
+
+    console.error("Unhandled error:", error);
+    res.status(500).json({
+      message: "Unexpected server error",
+      from: "BookingController",
+    });
+  }
+};
+
+//  LIST BOOKINGS FOR LOGGED-IN FARMER (MOCK)
+export const listFarmerBookings = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const farmerId = req.currentUser.id;
+    const { status, active, limit, offset } = req.query;
+
+    const filteredBookings = filterBookings(mockBookings, {
+      farmerId,
+      status: status as string,
+      active: active as string,
+      limit: limit ? parseInt(limit as string, 10) : undefined,
+      offset: offset ? parseInt(offset as string, 10) : 0,
+    });
+
+    const farmerBookings = mockBookings.filter((b) => b.farmerId === farmerId);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        bookings: filteredBookings,
+        total: farmerBookings.length,
+        filtered: filteredBookings.length,
+        farmer: {
+          id: farmerId,
+          role: req.currentUser.role,
+        },
       },
+    });
+  } catch (error) {
+    if (error instanceof BaseError) {
+      return res.status(error.statusCode).json(error.toJSON());
+    }
 
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
 
-
-//// Expire Bookings Controller
-
-const expiryService = new BookingExpiryService();
-
-export const expireBooking = async (req: Request, res: Response): Promise<void> => {
+//  EXPIRE BOOKING
+export const expireBooking = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { bookingId } = req.params;
     const user = req.currentUser;
@@ -191,10 +160,9 @@ export const expireBooking = async (req: Request, res: Response): Promise<void> 
 
     res.status(200).json({
       success: true,
-      message: 'Booking expired successfully',
-      data: expired
+      message: "Booking expired successfully",
+      data: expired,
     });
-
   } catch (error) {
     if (error instanceof BaseError) {
       res.status(error.statusCode).json(error.toJSON());
@@ -202,34 +170,31 @@ export const expireBooking = async (req: Request, res: Response): Promise<void> 
       console.error("Unhandled error:", error);
       res.status(500).json({
         message: "Unexpected server error",
-        from: "expireBooking Controller"
+        from: "expireBooking Controller",
       });
     }
   }
 };
 
-
-
-
-
-
-
-export const fetchBooking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//  FETCH BOOKING BY ID
+export const fetchBooking = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { bookingId } = req.params;
     const booking = await getBookingById(BigInt(bookingId));
-    console.log(booking)
 
     if (!booking) {
-      res.status(404).json({
+      return res.status(404).json({
         status: "Failed",
         message: "Booking not found",
       });
     }
 
-   
     res.status(200).json({
-      status: 'success',
+      status: "success",
       data: booking,
     });
   } catch (error) {
@@ -242,16 +207,28 @@ export const fetchBooking = async (req: Request, res: Response, next: NextFuncti
         from: "BookingController",
       });
     }
-  }
-};
-      res.status(500).json({
-        success: false,
-        message: 'Unable to fetch booking',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
     next(error);
   }
 };
 
-
+//  DELETE BOOKING HANDLER
+export const deleteBookingHandler = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    await deleteBooking(BigInt(bookingId));
+    res.status(204).send();
+  } catch (error) {
+    if (error instanceof BaseError) {
+      res.status(error.statusCode).json(error.toJSON());
+    } else {
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+};

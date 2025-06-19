@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { CreateBookingRequest } from "../controllers/createbooking.controller";
 import { BookingStatus } from "../types/types";
 import {
@@ -6,6 +7,11 @@ import {
   Facility,
   Farmer,
 } from "@prisma/client";
+=======
+import { BookingStatus, CreateBookingParams } from "../types/types";
+import { PrismaClient, Booking as PrismaBooking, Facility, Farmer } from '@prisma/client';
+
+>>>>>>> 1fb9d75251f50a22ffd01b06fac7fc6dec445877
 
 const prisma = new PrismaClient();
 
@@ -14,7 +20,13 @@ export interface Booking extends PrismaBooking {
   farmer: Farmer;
 }
 
+<<<<<<< HEAD
 const validateBookingRequest = (data: CreateBookingRequest) => {
+=======
+
+
+const validateBookingRequest = (data: CreateBookingParams) => {
+>>>>>>> 1fb9d75251f50a22ffd01b06fac7fc6dec445877
   const errors: { field: string; message: string }[] = [];
 
   if (!data.facilityId) {
@@ -60,7 +72,7 @@ const calculateBookingAmount = (
   return costPerDay * days;
 };
 
-export const createBooking = async (data: CreateBookingRequest) => {
+export const createBooking = async (data: CreateBookingParams) => {
   validateBookingRequest(data);
   try {
     const facility = await prisma.facility.findUnique({

@@ -1,5 +1,5 @@
-import { prisma } from "../prisma/client";
-import { NotFoundError } from "../errors/error";
+import { prisma } from "../prisma/prisma.client";
+import { NotFoundError } from "../errors/errors";
 import { UserRole } from "../types/types";
 
 export class BookingService {
@@ -17,7 +17,7 @@ export class BookingService {
           farmer: true,
         },
         orderBy: {
-          reservedAt: "desc",
+          createdAt: "desc",
         },
       });
 
@@ -27,7 +27,7 @@ export class BookingService {
     if (user.role === UserRole.OPERATOR) {
       const facilities = await prisma.facility.findMany({
         where: {
-          operatorId: user.id,
+          operatorId: Number(user.id),
         },
         select: { id: true },
       });
@@ -45,7 +45,7 @@ export class BookingService {
           farmer: true,
         },
         orderBy: {
-          reservedAt: "desc",
+          createdAt: "desc",
         },
       });
 

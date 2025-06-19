@@ -1,13 +1,16 @@
-import { prisma } from "../prisma/client";
+import { prisma } from "../prisma/prisma.client";
 import { BadRequestError, NotFoundError } from "../errors/errors";
 import { UserRole } from "../types/types";
+import { Booking, Facility } from "@prisma/client";
 
 export class BookingExpiryService {
   async expireBooking(bookingId: string, user: { id: string; role: UserRole }) {
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
+    const bookingIdAsBigInt = BigInt(bookingId);
+
+    const booking = (await prisma.booking.findUnique({
+      where: { id: bookingIdAsBigInt },
       include: { facility: true },
-    });
+    })) as Booking & { facility: Facility };
 
     if (!booking) {
       throw new NotFoundError({
@@ -31,10 +34,9 @@ export class BookingExpiryService {
       });
     }
 
-    // If operator: must only expire their own facility's bookings
     if (
       user.role === UserRole.OPERATOR &&
-      booking.facility.operatorId !== user.id
+      booking.facility.operatorId !== BigInt(user.id)
     ) {
       throw new BadRequestError({
         message: "Unauthorized to expire this booking",
@@ -43,7 +45,7 @@ export class BookingExpiryService {
     }
 
     const updatedBooking = await prisma.booking.update({
-      where: { id: bookingId },
+      where: { id: bookingIdAsBigInt },
       data: { active: false },
     });
 

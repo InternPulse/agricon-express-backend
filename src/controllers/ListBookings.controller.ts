@@ -9,22 +9,20 @@ export const listBookings = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { limit = "10", offset = "0" } = req.query;
+    const limit = Number(req.query.limit ?? 10);
+    const offset = Number(req.query.offset ?? 0);
 
     const bookings = await bookingService.getAllBookings(
       req.currentUser,
-      parseInt(limit as string, 10),
-      parseInt(offset as string, 10)
+      limit,
+      offset
     );
 
     res.status(200).json({
       success: true,
       message: "Bookings fetched successfully",
       data: bookings,
-      pagination: {
-        limit: Number(limit),
-        offset: Number(offset),
-      },
+      pagination: { limit, offset },
     });
   } catch (error) {
     if (error instanceof BaseError) {
