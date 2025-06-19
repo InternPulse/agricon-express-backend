@@ -5,12 +5,12 @@ import { BaseError, IErrorResponse } from './errors/errors';
 import { healthCheck, test_db } from './test_database.ts/test_db';
 
 const app = express();
+app.use(express.json());
 
 const BASE_URL = '/api/v1';
 // Middleware
-app.use(express.json());
-app.use(`${BASE_URL}/bookings`, bookingRoutes)
-app.use(`${BASE_URL}/facilities`, facilityRoutes)
+app.use(`${BASE_URL}/bookings`, bookingRoutes);
+app.use(`${BASE_URL}/facilities`, facilityRoutes);
 
 //endpoints to test db connection
 app.post(`${BASE_URL}/init-db`, test_db)
