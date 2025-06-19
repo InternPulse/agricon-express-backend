@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../config/config.db";
 import { BadRequestError, BaseError, NotFoundError } from "../../errors/errors";
-import { FacilityFilterOptions, FacilityUpdateData, FacilityWhere, GetByOperatorOptions} from "../../types/types";
+import { FacilityFilterOptions, FacilityUpdateData, GetByOperatorOptions} from "../../types/types";
 import { StatusCodes } from "http-status-codes";
 
 export const create = async (data: Prisma.FacilityCreateInput) => {
@@ -91,33 +91,18 @@ export const getAllFacilities = async (filters: FacilityFilterOptions) => {
     const { page, limit, location, type, available, minPrice, maxPrice } = filters;
     const offset = (page - 1) * limit;
 
-    const where: FacilityWhere = {};
+    const where: any = {};
 
     if (location) {
       where.OR = [
-        {
-          location: { contains: location, mode: "insensitive" },
-          description: undefined,
-        },
-        {
-          description: { contains: location, mode: "insensitive" },
-          location: undefined,
-        }
+        { location: { contains: location, mode: "insensitive" } },
+        { description: { contains: location, mode: "insensitive" } }
       ];
     }
 
-    if (type) {
-      where.type = type.toUpperCase();
-    }
-
-    if (available !== undefined) {
-      where.available = available;
-    }
-
-    if (minPrice !== undefined) {
-      where.pricePerDay = { gte: minPrice };
-    }
-
+    if (type) where.type = type.toUpperCase();
+    if (available !== undefined) where.available = available;
+    if (minPrice !== undefined) where.pricePerDay = { gte: minPrice };
     if (maxPrice !== undefined) {
       where.pricePerDay = {
         ...(where.pricePerDay || {}),

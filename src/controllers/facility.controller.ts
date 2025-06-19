@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import { create, get, getAll, update, deleteFacility, getAllFacilities, getFacilitiesByOperator} from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/errors";
-import { FacilityFilterOptions } from "../types/types";
 
 export const addFacility = async (req: Request, res: Response, next: NextFunction) => {
  try {
@@ -78,18 +77,16 @@ export const getAllFacilitiesController = async (req: Request, res: Response, ne
         from: "getAllFacilitiesController"
       });
     };
-    
-const type = req.query.type ? (req.query.type as string).toUpperCase() : undefined;
 
-const filters: FacilityFilterOptions = {
-  page,
-  limit,
-  location: req.query.location as string | undefined,
-  type: type as FacilityFilterOptions["type"],
-  available,
-  minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
-  maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
-};
+    const filters = {
+      page,
+      limit,
+      location: req.query.location as string | undefined,
+      type: (req.query.type as string | undefined)?.toUpperCase() as any,
+      available,
+      minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
+      maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined
+    };
 
     // EXTRA VALIdation for type
     const validTypes = ["DRYER", "STORAGE", "PROCESSING", "OTHER"];

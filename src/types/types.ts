@@ -161,16 +161,3 @@ export interface GetByOperatorOptions {
   page: number;
   limit: number;
 };
-
-export interface FacilityWhere {
-  OR?: Array<{
-    location?: { contains: string; mode: "insensitive" };
-    description?: { contains: string; mode: "insensitive" };
-  }>;
-  type?: string;
-  available?: boolean;
-  pricePerDay?: {
-    gte?: number;
-    lte?: number;
-  };
-}
