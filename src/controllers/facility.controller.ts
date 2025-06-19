@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { create, get, getAll, update, deleteFacility} from "../services/db/facility.service";
+import { create, get, getAll, update, deleteFacility, getAllFacilities, getFacilitiesByOperator} from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError } from "../errors/errors";
+import { BadRequestError, NotFoundError } from "../errors/errors";
 
 export const addFacility = async (req: Request, res: Response, next: NextFunction) => {
  try {
@@ -58,5 +58,87 @@ export const removeFacility = async (req: Request, res: Response, next: NextFunc
     });
   } catch (error) {
     next(error);
+  }
+};
+
+
+export const getAllFacilitiesController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Number(req.query.limit) || 10, 100);
+
+    const availableParam = req.query.available;
+    let available: boolean | undefined;
+    if (availableParam === "true") available = true;
+    else if (availableParam === "false") available = false;
+    else if (availableParam !== undefined) {
+      throw new BadRequestError({
+        message: "`available` must be true or false",
+        from: "getAllFacilitiesController"
+      });
+    };
+
+    const filters = {
+      page,
+      limit,
+      location: req.query.location as string | undefined,
+      type: (req.query.type as string | undefined)?.toUpperCase() as any,
+      available,
+      minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
+      maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined
+    };
+
+    // EXTRA VALIdation for type
+    const validTypes = ["DRYER", "STORAGE", "PROCESSING", "OTHER"];
+    if (filters.type && !validTypes.includes(filters.type)) {
+      throw new BadRequestError({
+        message: `Invalid type '${filters.type}'. Must be one of ${validTypes.join(", ")}`,
+        from: "getAllFacilitiesController"
+      });
+    }
+
+    const result = await getAllFacilities(filters);
+
+    res.status(StatusCodes.OK).json({
+      message: "Facilities fetched successfully",
+      ...result
+    });
+
+  } catch (err) {
+   next(err)
+  }
+};
+
+
+export const getFacilitiesByOperatorController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const operatorIdRaw = req.params.operatorId;
+
+    let operatorId: bigint;
+    try {
+      operatorId = BigInt(operatorIdRaw);
+    } catch {
+      throw new BadRequestError({
+        message: "Invalid operator ID",
+        from: "getFacilitiesByOperatorController"
+      });
+    }
+
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Number(req.query.limit) || 10, 100);
+
+    const result = await getFacilitiesByOperator({
+      operatorId,
+      page,
+      limit
+    });
+
+    res.status(StatusCodes.OK).json({
+      message: "Facilities fetched successfully",
+      ...result
+    });
+
+  } catch (err) {
+   next(err)
   }
 };

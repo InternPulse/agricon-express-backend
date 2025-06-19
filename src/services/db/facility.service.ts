@@ -1,7 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../config/config.db";
-import { BadRequestError, NotFoundError } from "../../errors/errors";
-import { FacilityUpdateData} from "../../types/types";
+import { BadRequestError, BaseError, NotFoundError } from "../../errors/errors";
+import { FacilityFilterOptions, FacilityUpdateData, GetByOperatorOptions} from "../../types/types";
+import { StatusCodes } from "http-status-codes";
 
 export const create = async (data: Prisma.FacilityCreateInput) => {
   try {
@@ -81,5 +82,87 @@ export const deleteFacility = async (facilityId: bigint) => {
       message: `Error deleting facility with ID ${facilityId}`,
       from: "deleteFacility()",
     });
+  }
+};
+
+
+export const getAllFacilities = async (filters: FacilityFilterOptions) => {
+  try {
+    const { page, limit, location, type, available, minPrice, maxPrice } = filters;
+    const offset = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (location) {
+      where.OR = [
+        { location: { contains: location, mode: "insensitive" } },
+        { description: { contains: location, mode: "insensitive" } }
+      ];
+    }
+
+    if (type) where.type = type.toUpperCase();
+    if (available !== undefined) where.available = available;
+    if (minPrice !== undefined) where.pricePerDay = { gte: minPrice };
+    if (maxPrice !== undefined) {
+      where.pricePerDay = {
+        ...(where.pricePerDay || {}),
+        lte: maxPrice
+      };
+    }
+
+    const [facilities, total] = await Promise.all([
+      prisma.facility.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: { createdAt: "desc" }
+      }),
+      prisma.facility.count({ where })
+    ]);
+
+    return {
+      facilities,
+      pagination: {
+        page,
+        limit,
+        total
+      },
+      filtersApplied: { location, type, available, minPrice, maxPrice }
+    };
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError({
+      message: 'Error fetching all facilities',
+      from: "getAllFacilities()",
+    });
+  }
+};
+
+export const getFacilitiesByOperator = async (options: GetByOperatorOptions) => {
+  const { operatorId, page, limit } = options;
+  const offset = (page - 1) * limit;
+
+  try {
+    const [facilities, total] = await Promise.all([
+      prisma.facility.findMany({
+        where: { operatorId },
+        skip: offset,
+        take: limit,
+        orderBy: { createdAt: "desc" }
+      }),
+      prisma.facility.count({ where: { operatorId } })
+    ]);
+
+    return {
+      facilities,
+      pagination: {
+        page,
+        limit,
+        total
+      }
+    };
+  } catch (err) {
+    console.log(err);
+    throw new BaseError("Failed to fetch facilities by operator", StatusCodes.INTERNAL_SERVER_ERROR);
   }
 };

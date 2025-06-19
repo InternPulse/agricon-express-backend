@@ -145,3 +145,19 @@ export interface CreateBookingParams {
   endDate: Date;
   amount?: number;
 }
+
+export interface FacilityFilterOptions {
+  page: number;
+  limit: number;
+  location?: string;
+  type?: 'DRYER' | 'STORAGE' | 'PROCESSING' | 'OTHER';
+  available?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+};
+
+export interface GetByOperatorOptions {
+  operatorId: bigint;
+  page: number;
+  limit: number;
+};
