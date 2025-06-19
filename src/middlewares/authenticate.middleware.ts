@@ -46,11 +46,13 @@ export const verifyAuth = async (
       email: string;
       role: UserRole;
     };
+    console.log(decoded);
     const decodeUser = {
       id: decoded.user_id,
       email: decoded.email,
       role: decoded.role
     };
+  
 
     if (decodeUser.role === UserRole.OPERATOR) {
       const operator = await prisma.operator.findFirst({
@@ -62,6 +64,21 @@ export const verifyAuth = async (
         next();
         return;
       }
+    } 
+    else if (decodeUser.role === UserRole.FARMER) {
+      const farmer = await prisma.farmer.findUnique({
+        where: { user_id: decodeUser.id } // user_id is unique
+      });
+
+      if (farmer) {
+        req.farmer = farmer as unknown as Farmer;
+        req.currentUser = decodeUser;
+        next();
+        return;
+      }
+    }
+  } catch {
+
     } else if (decodeUser.role === UserRole.FARMER) {
       const farmer = await prisma.farmer.findFirst({
         where: { user_id: decodeUser.id } // user_id is unique

@@ -191,7 +191,7 @@ enum TransactionDescription {
   BOOKING
   EXTENSION
   PENALTY
-  OTHER
+  OTHERS
 }
 
 enum TransactionStatus {
