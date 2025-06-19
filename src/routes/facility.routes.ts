@@ -1,11 +1,11 @@
 import express from 'express';
-import { addFacility,getFacility, updateFacility } from '../controllers/facility.controller';
+import { getFacility, updateFacility } from '../controllers/facility.controller';
+import { verifyAuth } from '../middlewares/authenticate.middleware';
 import { isFacilityOwner } from '../middlewares/authorization.middlewares';
 
 const router = express.Router();
 
-router.post('/facility', isFacilityOwner, addFacility);
-router.get('/:facilityId', isFacilityOwner, getFacility)
-router.put('/:facilityId', isFacilityOwner, updateFacility)
+router.get('/:facilityId', verifyAuth, getFacility)
+router.put('/:facilityId', verifyAuth, isFacilityOwner, updateFacility)
 
 export default router;

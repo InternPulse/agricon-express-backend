@@ -1,41 +1,25 @@
-import { BadRequestError } from "../../errors/errors";
-import prisma from "../../database";
-import { Facility, FacilityUpdateData } from "../../types/types";
+import { prisma } from "../../config/config.db";
+import { BadRequestError, NotFoundError } from "../../errors/errors";
+import { FacilityUpdateData } from "../../types/types";
 
-
-export const create = async (data: Facility) => {
-  try {
-    const facilityData = { ...data } as unknown as any;
-    const newFacility = await prisma.facility.create({ 
-      data : facilityData,
-    });
-
-    return newFacility;
-
-  } catch (error) {
-    throw new BadRequestError({
-      message: `Error creating facility: ${error}`, from: "create()",
-    });
-  }
-};
-
-export const get = async (facilityId: string) => {
+export const get = async (facilityId: bigint) => {
   try {
     const facility = await prisma.facility.findUnique({
       where: { id: facilityId }
     });
     if (!facility) {
-      throw new BadRequestError({message: `Facility with ID ${facilityId} not found`, from: "getFacility()"});
+      throw new NotFoundError({message: `Facility with ID ${facilityId} not found`, from: "getFacility()"});
     }
     return facility;
 
-  } catch (error) {
-    throw new BadRequestError({message: `Error fetching facility with ID ${facilityId}: ${error}`, from: "get()"});
+  } catch {
+    throw new NotFoundError({message: `Facility with ID ${facilityId} not found`, from: "get()"});
   }
 }
 
-export const update = async (facilityId: string, data: FacilityUpdateData) => {
+export const update = async (facilityId: bigint, data: FacilityUpdateData) => {
   try {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData = { ...data } as unknown as any;
   if (updateData.type !== undefined) {
     updateData.type = { set: updateData.type };
@@ -50,7 +34,7 @@ export const update = async (facilityId: string, data: FacilityUpdateData) => {
 
   return updatedFacility;
 
-  } catch (error) {
-    throw new BadRequestError({message: `Error updating facility with ID ${facilityId}: ${error}`, from: "update()"});
+  } catch {
+    throw new BadRequestError({message: `Error updating facility with ID ${facilityId}`, from: "update()"});
   }
 }
