@@ -19,9 +19,12 @@ export const get = async (facilityId: bigint) => {
     const facility = await prisma.facility.findUnique({
       where: { id: facilityId }
     });
+
+
     if (!facility) {
       throw new NotFoundError({message: `Facility with ID ${facilityId} not found`, from: "getFacility()"});
     }
+    
     return facility;
 
   } catch {

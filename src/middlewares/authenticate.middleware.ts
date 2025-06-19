@@ -54,8 +54,8 @@ export const verifyAuth = async (
     };
   
 
-    if (decodeUser) {
-      const operator = await prisma.operator.findUnique({
+    if (decodeUser.role === UserRole.OPERATOR) {
+      const operator = await prisma.operator.findFirst({
         where: { user_id: decodeUser.id } // user_id is unique
       });
       if (operator) {
@@ -65,21 +65,40 @@ export const verifyAuth = async (
         return;
       }
     } 
-    // else if (decodeUser.role === UserRole.FARMER) {
-    //   const farmer = await prisma.farmer.findUnique({
-    //     where: { user_id: decodeUser.id } // user_id is unique
-    //   });
+    else if (decodeUser.role === UserRole.FARMER) {
+      const farmer = await prisma.farmer.findUnique({
+        where: { user_id: decodeUser.id } // user_id is unique
+      });
 
-    //   if (farmer) {
-    //     req.farmer = farmer as unknown as Farmer;
-    //     req.currentUser = decodeUser;
-    //     next();
-    //     return;
-    //   }
-    // }
+      if (farmer) {
+        req.farmer = farmer as unknown as Farmer;
+        req.currentUser = decodeUser;
+        next();
+        return;
+      }
+    }
   } catch {
+
+    } else if (decodeUser.role === UserRole.FARMER) {
+      const farmer = await prisma.farmer.findFirst({
+        where: { user_id: decodeUser.id } // user_id is unique
+      });
+
+      if (farmer) {
+        req.farmer = farmer as unknown as Farmer;
+        req.currentUser = decodeUser;
+        next();
+        return;
+      }
+   }
+
     throw new BadRequestError({
-      message: `JWT auth error`,
+      message: `unauthorized`,
+      from: "authenticateJWT()"
+    });
+  } catch(error) {
+    throw new BadRequestError({
+      message: `${error}`,
       from: "authenticateJWT()"
     });
   }

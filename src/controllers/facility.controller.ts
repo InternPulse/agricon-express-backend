@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { create, get, getAll, update, deleteFacility} from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
+import { NotFoundError } from "../errors/errors";
 
 export const addFacility = async (req: Request, res: Response, next: NextFunction) => {
  try {
@@ -15,12 +16,13 @@ export const addFacility = async (req: Request, res: Response, next: NextFunctio
 }
 
 export const getFacility = async (req: Request, res: Response) => {
-  const facilityId = BigInt(req.params.facilityId);
-  const facility = await get(facilityId);
-
-  res.status(StatusCodes.OK).json({
-    message: "Facility fetch successful", 
-    data: facility});
+  try {
+    const facilityId = BigInt(req.params.facilityId);
+    const facility = await get(facilityId);
+    res.status(StatusCodes.OK).json({message: "Facility fetch successful", facility: facility});  
+  } catch {
+     throw new NotFoundError({message: `Facility not found`, from: "getFacility()"});
+  }
 }
 
 export const updateFacility = async (req: Request, res: Response) => {

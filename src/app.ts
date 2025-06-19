@@ -7,10 +7,19 @@ import { healthCheck, test_db } from './test_database.ts/test_db';
 const app = express();
 app.use(express.json());
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString(); 
+};
+
 const BASE_URL = '/api/v1';
 // Middleware
-app.use(`${BASE_URL}/bookings`, bookingRoutes);
-app.use(`${BASE_URL}/facilities`, facilityRoutes);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(`${BASE_URL}/bookings`, bookingRoutes)
+app.use(`${BASE_URL}/facilities`, facilityRoutes)
 
 //endpoints to test db connection
 app.post(`${BASE_URL}/init-db`, test_db)
