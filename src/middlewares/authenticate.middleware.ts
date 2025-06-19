@@ -40,23 +40,21 @@ export const verifyAuth = async (
       from: "authenticateJWT()"
     });
   }
-  // console.log(config.JWT_SECRET)
   try {
     const decoded = jwt.verify(token, config.JWT_SECRET as string) as {
       user_id: string;
       email: string;
       role: UserRole;
     };
+    console.log(decoded);
     const decodeUser = {
       id: decoded.user_id,
       email: decoded.email,
       role: decoded.role
     };
 
-    console.log("Decoded JWT:", decoded);
-
     if (decodeUser.role === UserRole.OPERATOR) {
-      const operator = await prisma.operator.findUnique({
+      const operator = await prisma.operator.findFirst({
         where: { user_id: decodeUser.id } // user_id is unique
       });
       if (operator) {
@@ -65,7 +63,8 @@ export const verifyAuth = async (
         next();
         return;
       }
-    } else if (decodeUser.role === UserRole.FARMER) {
+    } 
+    else if (decodeUser.role === UserRole.FARMER) {
       const farmer = await prisma.farmer.findUnique({
         where: { user_id: decodeUser.id } // user_id is unique
       });
@@ -80,13 +79,19 @@ export const verifyAuth = async (
       }
     }
   } catch {
-    throw new BadRequestError({
-      message: `JWT auth error, invalid token`,
-      from: "authenticateJWT()",
-      
-    });
-  }
-};
+
+    } else if (decodeUser.role === UserRole.FARMER) {
+      const farmer = await prisma.farmer.findFirst({
+        where: { user_id: decodeUser.id } // user_id is unique
+      });
+
+      if (farmer) {
+        req.farmer = farmer as unknown as Farmer;
+        req.currentUser = decodeUser;
+        next();
+        return;
+      }
+   }
 
 // Role Middleware
 export const authorizeRole = (roles: UserRole[]) => {

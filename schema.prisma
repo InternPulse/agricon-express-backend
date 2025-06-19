@@ -181,11 +181,17 @@ enum FacilityType {
   OTHER
 }
 
+enum UserRole {
+  FARMER
+  OPERATOR
+  ADMIN
+}
+
 enum TransactionDescription {
   BOOKING
   EXTENSION
   PENALTY
-  OTHER
+  OTHERS
 }
 
 enum TransactionStatus {

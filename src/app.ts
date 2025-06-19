@@ -5,6 +5,12 @@ import { BaseError, IErrorResponse } from './errors/errors';
 import { healthCheck, test_db } from './test_database.ts/test_db';
 
 const app = express();
+app.use(express.json());
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString(); 
+};
 
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();    
@@ -12,6 +18,7 @@ const app = express();
 
 const BASE_URL = '/api/v1';
 // Middleware
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(`${BASE_URL}/bookings`, bookingRoutes)
