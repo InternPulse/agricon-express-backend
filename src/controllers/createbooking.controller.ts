@@ -29,6 +29,7 @@ declare global {
 }
 
 export const createBookingHandler = async (req: Request, res: Response): Promise<void> => {
+  console.log('Route hit!');
   try {
 
     if (!req.currentUser || !req.currentUser.id) {
@@ -50,9 +51,10 @@ export const createBookingHandler = async (req: Request, res: Response): Promise
     console.log(bookingData)
 
      if(!bookingData.facilityId){
-      res.status(404).json({
+      res.status(400).json({
         success: false,
-        message: "facility ID required"
+        message: "facility ID required",
+        error: "facility ID required"
       });
       return
     }
@@ -69,10 +71,13 @@ export const createBookingHandler = async (req: Request, res: Response): Promise
   } catch (error) {
     // Re-throw our custom errors
     if (error instanceof BookingValidationError) {
+      res.status(400).json({
+        status: "Failed",
+        message: error.message,
+      })
       throw error;
     }
-    
-    console.log("Failed to create booking", error);
-    throw new Error("Database operation failed");
+    throw error;
+    // throw new Error("Database operation failed");
   }
 };

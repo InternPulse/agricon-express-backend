@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
-// import { PrismaClient } from '@prisma/client';
+import { NextFunction, Request, Response } from 'express';
 import { BaseError } from '../errors/errors';
 import { mockBookings } from '../data/mockBookings';
 import { filterBookings } from '../utils/bookingFilters';
+import { getBookingById } from '../services/booking.service';
 
 export const deleteBooking = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -63,3 +63,45 @@ export const listFarmerBookings = async (req: Request, res: Response): Promise<v
     }
   }
 };
+
+
+
+
+
+
+
+
+
+export const fetchBooking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await getBookingById(BigInt(bookingId));
+    console.log(booking)
+
+    if (!booking) {
+      res.status(404).json({
+        status: "Failed",
+        message: "Booking not found",
+      });
+    }
+
+   
+    res.status(200).json({
+      status: 'success',
+      data: booking,
+    });
+  } catch (error) {
+    if (error instanceof BaseError) {
+      res.status(error.statusCode).json(error.toJSON());
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Unable to fetch booking',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+    next(error);
+  }
+};
+
+

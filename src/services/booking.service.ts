@@ -1,9 +1,17 @@
-import { PrismaClient } from "@prisma/client";
 import { CreateBookingRequest } from "../controllers/createbooking.controller";
+import { BookingStatus } from "../types/types";
+import { PrismaClient, Booking as PrismaBooking, Facility, Farmer } from '@prisma/client';
+
 
 const prisma = new PrismaClient();
 
-// Reusable validation logic (from first approach)
+export interface Booking extends PrismaBooking {
+  facility: Facility;
+  farmer: Farmer;
+}
+
+
+
 const validateBookingRequest = (data: CreateBookingRequest) => {
   const errors: { field: string; message: string }[] = [];
 
@@ -59,12 +67,12 @@ export const createBooking = async (data: CreateBookingRequest) => {
 
     if (!facility) {
       console.log("Facility not found")
-      throw { name: "NotFoundError", message: "Facility not found" };
+      throw { status: "Failed", message: "Facility not found" };
     }
     if (!facility.available) {
       console.log("Facility is not available")
       throw {
-        name: "ConflictError",
+        status: "Failed",
         message: "Facility is not available for booking",
       };
     }
@@ -119,3 +127,94 @@ export const createBooking = async (data: CreateBookingRequest) => {
     throw error;
   }
 };
+
+
+
+// Update booking
+export const updateBooking = async (
+  id: bigint,
+  data: {
+    startDate?: Date;
+    endDate?: Date;
+    amount?: number;
+    paid?: boolean;
+    active?: boolean;
+  }
+): Promise<Booking> => {
+  return await prisma.booking.update({
+    where: { id },
+    data: {
+      startDate: data.startDate,
+      endDate: data.endDate,
+      amount: data.amount,
+      paid: data.paid,
+      active: data.active,
+    },
+    include: {
+      facility: true,
+      farmer: true,
+    },
+  });
+};
+
+
+
+export const getBookingById = async (id: bigint): Promise<Booking | null> => {
+  return await prisma.booking.findUnique({
+    where: { id },
+    include: {
+      facility: true,
+      farmer: true,
+    },
+  });
+};
+
+export const deleteBooking = async (id: bigint): Promise<void> => {
+  await prisma.booking.delete({
+    where: { id },
+  });
+};
+
+export const getFarmerBookings = async (farmerId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
+  const skip = (page - 1) * limit;
+  return await prisma.booking.findMany({
+    where: { farmerId },
+    skip,
+    take: limit,
+    include: {
+      facility: true,
+      farmer: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+};
+
+export const getFacilityBookings = async (facilityId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
+  const skip = (page - 1) * limit;
+  return await prisma.booking.findMany({
+    where: { facilityId },
+    skip,
+    take: limit,
+    include: {
+      facility: true,
+      farmer: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+};
+
+export const updateBookingStatus = async (id: bigint, status: BookingStatus): Promise<Booking> => {
+  return await prisma.booking.update({
+    where: { id },
+    data: { active: status === BookingStatus.ACTIVE },
+    include: {
+      facility: true,
+      farmer: true,
+    },
+  });
+};
+
