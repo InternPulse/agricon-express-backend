@@ -9,7 +9,7 @@ export const create = async (data: Prisma.FacilityCreateInput) => {
       data
     });
     return facility;
-  } catch (error) {
+  } catch {
     throw new BadRequestError({message: `Error creating facility`, from: "addFacility()"}); 
   }
 };
@@ -76,7 +76,7 @@ export const deleteFacility = async (facilityId: bigint) => {
       },
     });
     return deletedFacility;
-  } catch (error) {
+  } catch {
     throw new BadRequestError({
       message: `Error deleting facility with ID ${facilityId}`,
       from: "deleteFacility()",

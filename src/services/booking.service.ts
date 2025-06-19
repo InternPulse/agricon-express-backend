@@ -1,5 +1,4 @@
-import { CreateBookingRequest } from "../controllers/createbooking.controller";
-import { BookingStatus } from "../types/types";
+import { BookingStatus, CreateBookingParams } from "../types/types";
 import { PrismaClient, Booking as PrismaBooking, Facility, Farmer } from '@prisma/client';
 
 
@@ -12,7 +11,7 @@ export interface Booking extends PrismaBooking {
 
 
 
-const validateBookingRequest = (data: CreateBookingRequest) => {
+const validateBookingRequest = (data: CreateBookingParams) => {
   const errors: { field: string; message: string }[] = [];
 
   if (!data.facilityId) {
@@ -58,7 +57,7 @@ const calculateBookingAmount = (
   return costPerDay * days;
 };
 
-export const createBooking = async (data: CreateBookingRequest) => {
+export const createBooking = async (data: CreateBookingParams) => {
   validateBookingRequest(data);
   try {
     const facility = await prisma.facility.findUnique({
@@ -175,10 +174,14 @@ export const deleteBooking = async (id: bigint): Promise<void> => {
   });
 };
 
-export const getFarmerBookings = async (farmerId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
+export const getFarmerBookings = async (userId: string, page: number = 1, limit: number = 10): Promise<Booking[]> => {
   const skip = (page - 1) * limit;
   return await prisma.booking.findMany({
-    where: { farmerId },
+    where: { 
+      farmer: {
+        user_id: userId 
+      }
+     },
     skip,
     take: limit,
     include: {
@@ -191,10 +194,14 @@ export const getFarmerBookings = async (farmerId: bigint, page: number = 1, limi
   });
 };
 
-export const getFacilityBookings = async (facilityId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
+export const getFacilityBookings = async (operatorId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
   const skip = (page - 1) * limit;
   return await prisma.booking.findMany({
-    where: { facilityId },
+    where: {
+      facility: {
+        operatorId: operatorId
+      }
+    },
     skip,
     take: limit,
     include: {
