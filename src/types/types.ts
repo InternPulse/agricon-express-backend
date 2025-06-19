@@ -2,8 +2,8 @@
 
 export enum UserRole {
   FARMER = 'FARMER',
-  OPERATOR = 'OPERATOR', 
-  ADMIN = 'ADMIN'
+  OPERATOR = 'OPERATOR',
+  ADMIN = 'ADMIN',
 }
 export enum FacilityType {
   DRYER,

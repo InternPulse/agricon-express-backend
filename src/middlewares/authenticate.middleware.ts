@@ -40,7 +40,7 @@ export const verifyAuth = async (
       from: "authenticateJWT()"
     });
   }
-  console.log(config.JWT_SECRET)
+  // console.log(config.JWT_SECRET)
   try {
     const decoded = jwt.verify(token, config.JWT_SECRET as string) as {
       user_id: string;
@@ -69,6 +69,8 @@ export const verifyAuth = async (
       const farmer = await prisma.farmer.findUnique({
         where: { user_id: decodeUser.id } // user_id is unique
       });
+      
+      console.log("FAMER: ",farmer)
 
       if (farmer) {
         req.farmer = farmer as unknown as Farmer;

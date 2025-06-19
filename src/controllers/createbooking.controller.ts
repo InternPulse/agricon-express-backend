@@ -4,8 +4,8 @@ import { UserRole } from '../types/types';
 import { BookingValidationError } from '../errors/errors';
 
 export interface CreateBookingRequest {
-  facilityId: string |number |bigint;
-  farmerId: string |number | bigint;
+  facilityId: bigint;
+  farmerId: bigint;
   startDate: Date;
   endDate: Date;
   amount?: number;
@@ -32,17 +32,9 @@ export const createBookingHandler = async (req: Request, res: Response): Promise
   console.log('Route hit!');
   try {
 
-    if (!req.currentUser || !req.currentUser.id) {
-       res.status(401).json({
-        success: false,
-        message: 'Authentication required'
-      });
-      return
-    }
-  
-    const bookingData: CreateBookingRequest = {
+      const bookingData: CreateBookingRequest = {
       facilityId: req.body.facilityId,
-      farmerId: req.currentUser.id,
+      farmerId: req.farmer.id,
       startDate: new Date(req.body.startDate),
       endDate: new Date(req.body.endDate),
       amount: req.body.amount,
@@ -69,15 +61,15 @@ export const createBookingHandler = async (req: Request, res: Response): Promise
     });
   
   } catch (error) {
+    console.log(error)
     // Re-throw our custom errors
-    if (error instanceof BookingValidationError) {
-      res.status(400).json({
-        status: "Failed",
-        message: error.message,
-      })
-      throw error;
-    }
-    throw error;
+    // if (error instanceof BookingValidationError) {
+    //   res.status(400).json({
+    //     status: "Failed",
+    //     message: error.message,
+    //   })
+    //   throw error;
+    // }
     // throw new Error("Database operation failed");
   }
 };
