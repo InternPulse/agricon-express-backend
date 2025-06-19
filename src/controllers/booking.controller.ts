@@ -3,6 +3,8 @@ import { BookingService } from "../services/booking.service";
 import { BaseError } from "../errors/errors";
 import { mockBookings } from "../data/mockBookings";
 import { filterBookings } from "../utils/bookingFilters";
+import { BookingExpiryService } from '../services/bookingExpire.service';
+
 
 // import { PrismaClient } from '@prisma/client';
 // const prisma = new PrismaClient();
@@ -71,6 +73,17 @@ export const deleteBooking = async (
   try {
     // MOCK DELETION - Skip actual database deletion
     // In real implementation: await prisma.booking.delete({ where: { id: bookingId } });
+import { NextFunction, Request, Response } from 'express';
+import { BaseError } from '../errors/errors';
+import { mockBookings } from '../data/mockBookings';
+import { filterBookings } from '../utils/bookingFilters';
+import { deleteBooking, getBookingById } from '../services/booking.service';
+
+export const deleteBookingHandler = async (req: Request, res: Response): Promise<void> => {
+  try {
+
+    const { bookingId } = req.params;
+    await deleteBooking(BigInt(bookingId));
 
     res.status(204).send();
   } catch (error) {
@@ -131,6 +144,10 @@ export const listFarmerBookings = async (
   }
 };
 
+
+
+//// List Bookings Controller
+
 const bookingService = new BookingService();
 
 export const listBookings = async (
@@ -158,6 +175,62 @@ export const listBookings = async (
         limit,
         offset,
       },
+
+
+
+//// Expire Bookings Controller
+
+const expiryService = new BookingExpiryService();
+
+export const expireBooking = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    const user = req.currentUser;
+
+    const expired = await expiryService.expireBooking(bookingId, user);
+
+    res.status(200).json({
+      success: true,
+      message: 'Booking expired successfully',
+      data: expired
+    });
+
+  } catch (error) {
+    if (error instanceof BaseError) {
+      res.status(error.statusCode).json(error.toJSON());
+    } else {
+      console.error("Unhandled error:", error);
+      res.status(500).json({
+        message: "Unexpected server error",
+        from: "expireBooking Controller"
+      });
+    }
+  }
+};
+
+
+
+
+
+
+
+export const fetchBooking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await getBookingById(BigInt(bookingId));
+    console.log(booking)
+
+    if (!booking) {
+      res.status(404).json({
+        status: "Failed",
+        message: "Booking not found",
+      });
+    }
+
+   
+    res.status(200).json({
+      status: 'success',
+      data: booking,
     });
   } catch (error) {
     if (error instanceof BaseError) {
@@ -171,3 +244,14 @@ export const listBookings = async (
     }
   }
 };
+      res.status(500).json({
+        success: false,
+        message: 'Unable to fetch booking',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+    next(error);
+  }
+};
+
+

@@ -36,7 +36,7 @@ export const verifyAuth = async (
   const token = authHeader.split(" ")[1];
   if (!config.JWT_SECRET || typeof config.JWT_SECRET !== "string") {
     throw new BadRequestError({
-      message: `JWT auth error`,
+      message: `JWT auth error, secret key is missing or invalid`,
       from: "authenticateJWT()"
     });
   }
@@ -46,6 +46,7 @@ export const verifyAuth = async (
       email: string;
       role: UserRole;
     };
+    console.log(decoded);
     const decodeUser = {
       id: decoded.user_id,
       email: decoded.email,
@@ -53,7 +54,7 @@ export const verifyAuth = async (
     };
 
     if (decodeUser.role === UserRole.OPERATOR) {
-      const operator = await prisma.operator.findUnique({
+      const operator = await prisma.operator.findFirst({
         where: { user_id: decodeUser.id } // user_id is unique
       });
       if (operator) {
@@ -62,10 +63,13 @@ export const verifyAuth = async (
         next();
         return;
       }
-    } else if (decodeUser.role === UserRole.FARMER) {
+    } 
+    else if (decodeUser.role === UserRole.FARMER) {
       const farmer = await prisma.farmer.findUnique({
         where: { user_id: decodeUser.id } // user_id is unique
       });
+      
+      console.log("FAMER: ",farmer)
 
       if (farmer) {
         req.farmer = farmer as unknown as Farmer;
@@ -75,12 +79,19 @@ export const verifyAuth = async (
       }
     }
   } catch {
-    throw new BadRequestError({
-      message: `JWT auth error`,
-      from: "authenticateJWT()"
-    });
-  }
-};
+
+    } else if (decodeUser.role === UserRole.FARMER) {
+      const farmer = await prisma.farmer.findFirst({
+        where: { user_id: decodeUser.id } // user_id is unique
+      });
+
+      if (farmer) {
+        req.farmer = farmer as unknown as Farmer;
+        req.currentUser = decodeUser;
+        next();
+        return;
+      }
+   }
 
 // Role Middleware
 export const authorizeRole = (roles: UserRole[]) => {
