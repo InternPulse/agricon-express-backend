@@ -12,18 +12,22 @@ app.use(express.json());
   return this.toString(); 
 };
 
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();    
+};
+
 const BASE_URL = '/api/v1';
 // Middleware
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(`${BASE_URL}/bookings`, bookingRoutes)
 // app.use(`${BASE_URL}/facilities`, facilityRoutes)
 
 //endpoints to test db connection
 app.post(`${BASE_URL}/init-db`, test_db)
 app.get(`${BASE_URL}/health`, healthCheck);
+
 
 app.use((error: IErrorResponse, _req: Request, res: Response, next: NextFunction) => {
   if (error instanceof BaseError) {

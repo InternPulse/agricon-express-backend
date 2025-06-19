@@ -2,13 +2,13 @@ import { NextFunction, Request, Response } from 'express';
 import { BaseError } from '../errors/errors';
 import { mockBookings } from '../data/mockBookings';
 import { filterBookings } from '../utils/bookingFilters';
-import { getBookingById } from '../services/booking.service';
+import { deleteBooking, getBookingById } from '../services/booking.service';
 
-export const deleteBooking = async (req: Request, res: Response): Promise<void> => {
+export const deleteBookingHandler = async (req: Request, res: Response): Promise<void> => {
   try {
 
-    // MOCK DELETION - Skip actual database deletion
-    // In real implementation: await prisma.booking.delete({ where: { id: bookingId } });
+    const { bookingId } = req.params;
+    await deleteBooking(BigInt(bookingId));
 
     res.status(204).send();
   } catch (error) {
