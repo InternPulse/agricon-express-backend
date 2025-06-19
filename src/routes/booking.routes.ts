@@ -1,28 +1,34 @@
-<<<<<<< HEAD
 import { Router } from "express";
 import {
-  deleteBooking,
-  listFarmerBookings,
+  createBookingHandler,
+  deleteBookingHandler,
   fetchBooking,
+  listFarmerBookings,
   updateBookingHandler,
+  listBookings,
+  expireBooking,
 } from "../controllers/booking.controller";
-
-import { listBookings } from "../controllers/listBookings.controller";
-import { expireBooking } from "../controllers/expireBookings.controller";
 
 import { validateBookingId } from "../middlewares/bookingValidation";
 import {
-  checkBookingOwnership,
   authorizeRole,
+  checkBookingOwnership,
+  isFarmer,
 } from "../middlewares/authorization.middlewares";
 import { verifyAuth } from "../middlewares/authenticate.middleware";
-
-import { createBookingHandler } from "../controllers/createBooking.controller";
 import { UserRole } from "../types/types";
 
 const router = Router();
 
-// List all bookings (admin + operator access only)
+/**
+ * Booking Routes
+ * ==============
+ * These routes cover:
+ * - Public farmer booking endpoints
+ * - Admin/operator tools (list/expire bookings)
+ */
+
+//  Protected: Admin or Operator — List all bookings
 router.get(
   "/bookings",
   verifyAuth,
@@ -30,54 +36,44 @@ router.get(
   listBookings
 );
 
-// Expire Booking
+//  Protected: Admin or Operator — Expire a booking
 router.patch(
   "/bookings/:bookingId/expire",
   verifyAuth,
-  authorizeRole([UserRole.ADMIN, UserRole.OPERATOR]),
+  authorizeRole(UserRole.OPERATOR, UserRole.ADMIN),
+  validateBookingId,
   expireBooking
 );
 
-// List bookings for a logged-in farmer
-router.get("/", listFarmerBookings);
-
-// Create a new booking (farmer + operator only)
+//  Farmer or Operator — Create a new booking
 router.post(
-  "/create-booking",
+  "/",
   verifyAuth,
   authorizeRole(UserRole.FARMER, UserRole.OPERATOR),
   createBookingHandler
 );
 
-// Fetch a specific booking
+//  Authenticated farmer — List their bookings
+router.get("/farmer", verifyAuth, isFarmer, listFarmerBookings);
+
+//  Get specific booking by ID
 router.get("/:bookingId", verifyAuth, validateBookingId, fetchBooking);
 
-// Update a booking
-router.put("/:bookingId", verifyAuth, validateBookingId, updateBookingHandler);
+//  Update a booking
+router.patch(
+  "/:bookingId",
+  verifyAuth,
+  validateBookingId,
+  updateBookingHandler
+);
 
-// Delete a booking
+//  Delete a booking (with ownership check)
 router.delete(
   "/:bookingId",
   verifyAuth,
   validateBookingId,
   checkBookingOwnership,
-  deleteBooking
+  deleteBookingHandler
 );
-=======
-import express from 'express';
-import { validateBookingId } from '../middlewares/bookingValidation';
-import { isFarmer } from '../middlewares/authorization.middlewares';
-import { verifyAuth } from '../middlewares/authenticate.middleware';
-import { updateBookingHandler } from '../controllers/updatebooking.controller';
-import { createBookingHandler, deleteBookingHandler, fetchBooking, listFarmerBookings } from '../controllers/booking.controller';
-
-const router = express.Router();
-
-router.post('/', verifyAuth, isFarmer, createBookingHandler)
-router.get('/farmer', listFarmerBookings);
-router.get('/:bookingId', verifyAuth, validateBookingId, fetchBooking)
-router.patch('/:bookingId', verifyAuth, validateBookingId,  updateBookingHandler);
-router.delete('/:bookingId', validateBookingId, deleteBookingHandler);
->>>>>>> 1fb9d75251f50a22ffd01b06fac7fc6dec445877
 
 export default router;
