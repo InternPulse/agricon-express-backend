@@ -5,7 +5,7 @@ import { FacilityUpdateData } from "../../types/types";
 export const get = async (facilityId: bigint) => {
   try {
     const facility = await prisma.facility.findUnique({
-      where: { id: facilityId }
+      where: { id: BigInt(facilityId) }
     });
     if (!facility) {
       throw new NotFoundError({message: `Facility with ID ${facilityId} not found`, from: "getFacility()"});
@@ -27,7 +27,7 @@ export const update = async (facilityId: bigint, data: FacilityUpdateData) => {
 
   const updatedFacility = await prisma.facility.update({
     where: {
-      id: facilityId,
+      id: BigInt(facilityId),
     },
     data: updateData,
   });

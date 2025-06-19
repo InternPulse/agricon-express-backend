@@ -1,11 +1,10 @@
 /* eslint-disable */
 
 export enum UserRole {
-  FARMER,
-  OPERATOR,
-  ADMIN,
+  FARMER = 'FARMER',
+  OPERATOR = 'OPERATOR', 
+  ADMIN = 'ADMIN'
 }
-
 export enum FacilityType {
   DRYER,
   STORAGE,

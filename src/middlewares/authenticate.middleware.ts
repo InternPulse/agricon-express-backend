@@ -36,10 +36,11 @@ export const verifyAuth = async (
   const token = authHeader.split(" ")[1];
   if (!config.JWT_SECRET || typeof config.JWT_SECRET !== "string") {
     throw new BadRequestError({
-      message: `JWT auth error`,
+      message: `JWT auth error, secret key is missing or invalid`,
       from: "authenticateJWT()"
     });
   }
+  console.log(config.JWT_SECRET)
   try {
     const decoded = jwt.verify(token, config.JWT_SECRET as string) as {
       user_id: string;
@@ -51,6 +52,8 @@ export const verifyAuth = async (
       email: decoded.email,
       role: decoded.role
     };
+
+    console.log("Decoded JWT:", decoded);
 
     if (decodeUser.role === UserRole.OPERATOR) {
       const operator = await prisma.operator.findUnique({
@@ -76,8 +79,9 @@ export const verifyAuth = async (
     }
   } catch {
     throw new BadRequestError({
-      message: `JWT auth error`,
-      from: "authenticateJWT()"
+      message: `JWT auth error, invalid token`,
+      from: "authenticateJWT()",
+      
     });
   }
 };
