@@ -1,6 +1,17 @@
+<<<<<<< HEAD
+import { CreateBookingRequest } from "../controllers/createbooking.controller";
+import { BookingStatus } from "../types/types";
+import {
+  PrismaClient,
+  Booking as PrismaBooking,
+  Facility,
+  Farmer,
+} from "@prisma/client";
+=======
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import { PrismaClient, Booking as PrismaBooking, Facility, Farmer } from '@prisma/client';
 
+>>>>>>> 1fb9d75251f50a22ffd01b06fac7fc6dec445877
 
 const prisma = new PrismaClient();
 
@@ -9,9 +20,13 @@ export interface Booking extends PrismaBooking {
   farmer: Farmer;
 }
 
+<<<<<<< HEAD
+const validateBookingRequest = (data: CreateBookingRequest) => {
+=======
 
 
 const validateBookingRequest = (data: CreateBookingParams) => {
+>>>>>>> 1fb9d75251f50a22ffd01b06fac7fc6dec445877
   const errors: { field: string; message: string }[] = [];
 
   if (!data.facilityId) {
@@ -65,11 +80,11 @@ export const createBooking = async (data: CreateBookingParams) => {
     });
 
     if (!facility) {
-      console.log("Facility not found")
+      console.log("Facility not found");
       throw { status: "Failed", message: "Facility not found" };
     }
     if (!facility.available) {
-      console.log("Facility is not available")
+      console.log("Facility is not available");
       throw {
         status: "Failed",
         message: "Facility is not available for booking",
@@ -94,7 +109,7 @@ export const createBooking = async (data: CreateBookingParams) => {
     });
 
     if (overlappingBookings > 0) {
-      console.log("Facility is already booked")
+      console.log("Facility is already booked");
       throw {
         name: "ConflictError",
         message: "Facility already booked for these dates",
@@ -127,8 +142,6 @@ export const createBooking = async (data: CreateBookingParams) => {
   }
 };
 
-
-
 // Update booking
 export const updateBooking = async (
   id: bigint,
@@ -156,8 +169,6 @@ export const updateBooking = async (
   });
 };
 
-
-
 export const getBookingById = async (id: bigint): Promise<Booking | null> => {
   return await prisma.booking.findUnique({
     where: { id },
@@ -174,7 +185,11 @@ export const deleteBooking = async (id: bigint): Promise<void> => {
   });
 };
 
-export const getFarmerBookings = async (farmerId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
+export const getFarmerBookings = async (
+  farmerId: bigint,
+  page: number = 1,
+  limit: number = 10
+): Promise<Booking[]> => {
   const skip = (page - 1) * limit;
   return await prisma.booking.findMany({
     where: { farmerId },
@@ -185,12 +200,16 @@ export const getFarmerBookings = async (farmerId: bigint, page: number = 1, limi
       farmer: true,
     },
     orderBy: {
-      createdAt: 'desc',
+      createdAt: "desc",
     },
   });
 };
 
-export const getFacilityBookings = async (facilityId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
+export const getFacilityBookings = async (
+  facilityId: bigint,
+  page: number = 1,
+  limit: number = 10
+): Promise<Booking[]> => {
   const skip = (page - 1) * limit;
   return await prisma.booking.findMany({
     where: { facilityId },
@@ -201,12 +220,15 @@ export const getFacilityBookings = async (facilityId: bigint, page: number = 1, 
       farmer: true,
     },
     orderBy: {
-      createdAt: 'desc',
+      createdAt: "desc",
     },
   });
 };
 
-export const updateBookingStatus = async (id: bigint, status: BookingStatus): Promise<Booking> => {
+export const updateBookingStatus = async (
+  id: bigint,
+  status: BookingStatus
+): Promise<Booking> => {
   return await prisma.booking.update({
     where: { id },
     data: { active: status === BookingStatus.ACTIVE },
@@ -216,4 +238,3 @@ export const updateBookingStatus = async (id: bigint, status: BookingStatus): Pr
     },
   });
 };
-
