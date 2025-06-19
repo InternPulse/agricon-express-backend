@@ -139,3 +139,30 @@ export interface Transaction {
   booking: Booking;
 }
 
+export interface FacilityFilterOptions {
+  page: number;
+  limit: number;
+  location?: string;
+  type?: 'DRYER' | 'STORAGE' | 'PROCESSING' | 'OTHER';
+  available?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+};
+
+interface PaginatedFacilityResponse {
+  message: string;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+  filtersApplied?: Record<string, any>; 
+  facilities: Facility[];
+};
+
+export interface GetByOperatorOptions {
+  operatorId: bigint;
+  page: number;
+  limit: number;
+};
+

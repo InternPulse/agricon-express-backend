@@ -1,5 +1,5 @@
 import express from 'express';
-import { addFacility,getFacility, updateFacility, getAllFacility, removeFacility } from '../controllers/facility.controller';
+import { addFacility,getFacility, updateFacility, getAllFacility, removeFacility, getAllFacilitiesController } from '../controllers/facility.controller';
 import { validateRequest } from '../middlewares/validator.middleware';
 import { facilityValidator } from '../utils/validateFacility';
 import { verifyAuth } from '../middlewares/authenticate.middleware';
@@ -12,4 +12,5 @@ router.get('/:facilityId', verifyAuth, getFacility);
 router.get('/', verifyAuth, getAllFacility);
 router.put('/update/:facilityId', verifyAuth, isFacilityOwner, updateFacility);
 router.delete('/delete/:facilityId', removeFacility);
+router.get("/get",verifyAuth, getAllFacilitiesController)
 export default router;
