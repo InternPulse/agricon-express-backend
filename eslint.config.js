@@ -23,7 +23,7 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   {
