@@ -7,9 +7,9 @@ import { isFacilityOwner, isOperator } from '../middlewares/authorization.middle
 const router = express.Router();
 
 router.post('/', verifyAuth, facilityValidator, isOperator, addFacility);
-router.get('/:facilityId', verifyAuth, getFacility);
 router.get('/', verifyAuth, getAllFacility);
+router.get('/:facilityId', verifyAuth,  getFacility);
 router.put('/:facilityId', verifyAuth, isFacilityOwner, updateFacility);
-router.delete('/:facilityId', removeFacility);
+router.delete('/:facilityId', verifyAuth, isFacilityOwner, removeFacility);
 
 export default router;
