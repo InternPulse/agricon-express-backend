@@ -8,29 +8,29 @@ datasource db {
 }
 
 model Farmer {
-  id        BigInt   @id @default(autoincrement())
-  firstName String   @db.VarChar(100)
-  lastName  String   @db.VarChar(100)
-  phone     String   @unique @db.VarChar(20)
-  address   String?  @db.VarChar(255)
-  createdAt DateTime @db.Timestamptz(6)
-  updatedAt DateTime @db.Timestamptz(6)
-  user_id   String   @unique @db.Uuid
+  id        BigInt    @id @default(autoincrement())
+  firstName String    @db.VarChar(100)
+  lastName  String    @db.VarChar(100)
+  phone     String    @unique @db.VarChar(20)
+  address   String?   @db.VarChar(255)
+  createdAt DateTime  @db.Timestamptz(6)
+  updatedAt DateTime  @db.Timestamptz(6)
+  user_id   String    @unique @db.Uuid
   Booking   Booking[]
 
   @@map("users_farmerprofile")
 }
 
 model Operator {
-  id           BigInt   @id @default(autoincrement())
-  firstName    String   @db.VarChar(100)
-  lastName     String   @db.VarChar(100)
-  phone        String   @unique @db.VarChar(20)
-  businessName String?  @db.VarChar(255)
-  address      String?  @db.VarChar(255)
-  createdAt    DateTime @db.Timestamptz(6)
-  updatedAt    DateTime @db.Timestamptz(6)
-  user_id      String   @unique @db.Uuid
+  id           BigInt     @id @default(autoincrement())
+  firstName    String     @db.VarChar(100)
+  lastName     String     @db.VarChar(100)
+  phone        String     @unique @db.VarChar(20)
+  businessName String?    @db.VarChar(255)
+  address      String?    @db.VarChar(255)
+  createdAt    DateTime   @db.Timestamptz(6)
+  updatedAt    DateTime   @db.Timestamptz(6)
+  user_id      String     @unique @db.Uuid
   Facility     Facility[]
 
   @@index([phone], map: "users_operatorprofile_phone_e174896f_like")
@@ -174,6 +174,51 @@ model users_user_user_permissions {
   @@index([user_id], map: "users_user_user_permissions_user_id_20aca447")
 }
 
+model Facility {
+  id          BigInt       @id @default(autoincrement())
+  operatorId  BigInt
+  location    String
+  type        FacilityType
+  available   Boolean      @default(true)
+  capacity    Int          @default(0)
+  contact     String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  pricePerDay Float
+  bookings    Booking[]
+  operator    Operator     @relation(fields: [operatorId], references: [id])
+}
+
+model Booking {
+  id           BigInt       @id @default(autoincrement())
+  facilityId   BigInt
+  farmerId     BigInt
+  amount       Float
+  paid         Boolean      @default(false)
+  active       Boolean      @default(false)
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  facility     Facility     @relation(fields: [facilityId], references: [id])
+  farmer       Farmer       @relation(fields: [farmerId], references: [id])
+  transactions Transaction?
+}
+
+model Transaction {
+  id            BigInt                 @id @default(autoincrement())
+  bookingId     BigInt                 @unique
+  description   TransactionDescription
+  paymentMethod String
+  amount        Float
+  status        TransactionStatus      @default(PENDING)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  ref           String                 @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  booking       Booking                @relation(fields: [bookingId], references: [id])
+}
+
 enum FacilityType {
   DRYER
   STORAGE
@@ -181,17 +226,11 @@ enum FacilityType {
   OTHER
 }
 
-enum UserRole {
-  FARMER
-  OPERATOR
-  ADMIN
-}
-
 enum TransactionDescription {
   BOOKING
   EXTENSION
   PENALTY
-  OTHERS
+  OTHER
 }
 
 enum TransactionStatus {
@@ -199,48 +238,4 @@ enum TransactionStatus {
   COMPLETED
   FAILED
   REFUNDED
-}
-
-model Facility {
-  id          BigInt     @id @default(autoincrement())
-  operatorId  BigInt
-  operator    Operator   @relation(fields: [operatorId], references: [id])
-  location    String
-  pricePerDay Float
-  type        FacilityType
-  available   Boolean    @default(true)
-  capacity    Int        @default(0)
-  contact     String
-  description String?
-  bookings    Booking[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model Booking {
-  id            BigInt    @id @default(autoincrement())
-  facilityId    BigInt
-  facility      Facility   @relation(fields: [facilityId], references: [id])
-  farmerId      BigInt
-  farmer        Farmer     @relation(fields: [farmerId], references: [id])
-  amount        Float
-  paid          Boolean    @default(false)
-  active        Boolean    @default(false)
-  startDate     DateTime
-  endDate       DateTime
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  transactions  Transaction[]
-}
-
-model Transaction {
-  id            BigInt    @id @default(autoincrement())
-  bookingId     BigInt            @unique
-  booking       Booking           @relation(fields: [bookingId], references: [id])
-  description   TransactionDescription
-  paymentMethod String
-  amount        Float
-  status        TransactionStatus @default(PENDING)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
 }

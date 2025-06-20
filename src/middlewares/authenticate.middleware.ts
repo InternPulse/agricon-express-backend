@@ -50,45 +50,9 @@ export const verifyAuth = async (
       role: decoded.role
     };
 
-    if (decodeUser.role === UserRole.OPERATOR) {
-      const operator = await prisma.operator.findFirst({
-        where: { user_id: decodeUser.id } // user_id is unique
-      });
-      if (operator) {
-        req.operator = operator as unknown as Operator;
-        req.currentUser = decodeUser;
-        next();
-        return;
-      }
-    } 
-    else if (decodeUser.role === UserRole.FARMER) {
-      const farmer = await prisma.farmer.findUnique({
-        where: { user_id: decodeUser.id } // user_id is unique
-      });
-      
-      console.log("FAMER: ",farmer)
+    req.currentUser = decodeUser;
+    next();
 
-      if (farmer) {
-        req.farmer = farmer as unknown as Farmer;
-        req.currentUser = decodeUser;
-        next();
-        return;
-      }
-    }
-  } catch {
-
-    } else if (decodeUser.role === UserRole.FARMER) {
-      const farmer = await prisma.farmer.findFirst({
-        where: { user_id: decodeUser.id } // user_id is unique
-      });
-
-    //   if (farmer) {
-    //     req.farmer = farmer as unknown as Farmer;
-    //     req.currentUser = decodeUser;
-    //     next();
-    //     return;
-    //   }
-    // }
   } catch(error) {
     console.log(error)
      throw new BadRequestError({

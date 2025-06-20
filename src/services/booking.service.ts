@@ -174,10 +174,14 @@ export const deleteBooking = async (id: bigint): Promise<void> => {
   });
 };
 
-export const getFarmerBookings = async (farmerId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
+export const getFarmerBookings = async (userId: string, page: number = 1, limit: number = 10): Promise<Booking[]> => {
   const skip = (page - 1) * limit;
   return await prisma.booking.findMany({
-    where: { farmerId },
+    where: { 
+      farmer: {
+        user_id: userId 
+      }
+     },
     skip,
     take: limit,
     include: {
@@ -190,10 +194,14 @@ export const getFarmerBookings = async (farmerId: bigint, page: number = 1, limi
   });
 };
 
-export const getFacilityBookings = async (facilityId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
+export const getFacilityBookings = async (operatorId: bigint, page: number = 1, limit: number = 10): Promise<Booking[]> => {
   const skip = (page - 1) * limit;
   return await prisma.booking.findMany({
-    where: { facilityId },
+    where: {
+      facility: {
+        operatorId: operatorId
+      }
+    },
     skip,
     take: limit,
     include: {
