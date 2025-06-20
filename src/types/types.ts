@@ -26,7 +26,6 @@ export enum TransactionStatus {
   REFUNDED,
 }
 
-
 export interface User {
   id: string;
   email: string;
@@ -139,3 +138,26 @@ export interface Transaction {
   booking: Booking;
 }
 
+export interface CreateBookingParams {
+  facilityId: bigint;
+  farmerId: bigint;
+  startDate: Date;
+  endDate: Date;
+  amount?: number;
+}
+
+export interface FacilityFilterOptions {
+  page: number;
+  limit: number;
+  location?: string;
+  type?: 'DRYER' | 'STORAGE' | 'PROCESSING' | 'OTHER';
+  available?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+};
+
+export interface GetByOperatorOptions {
+  operatorId: bigint;
+  page: number;
+  limit: number;
+};

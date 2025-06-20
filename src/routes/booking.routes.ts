@@ -1,11 +1,10 @@
 import express from 'express';
 import {deleteBookingHandler, fetchBooking, listFarmerBookings } from '../controllers/booking.controller';
 import { validateBookingId } from '../middlewares/bookingValidation';
-import { authorizeRole, checkBookingOwnership } from '../middlewares/authorization.middlewares';
-import { UserRole } from '../types/types';
-import { createBookingHandler } from '../controllers/createbooking.controller';
+import { isFarmer } from '../middlewares/authorization.middlewares';
 import { verifyAuth } from '../middlewares/authenticate.middleware';
 import { updateBookingHandler } from '../controllers/updatebooking.controller';
+import { createBookingHandler, deleteBookingHandler, fetchBooking, listFarmerBookings } from '../controllers/booking.controller';
 
 const router = express.Router();
 

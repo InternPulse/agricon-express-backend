@@ -12,10 +12,8 @@ export interface UpdateBookingRequest {
 }
 
 export const updateBookingHandler = async (req: Request, res: Response): Promise<void> => {
-    console.log("Update Endpoint Hit")
   try {
     const { bookingId } = req.params;
-    console.log(bookingId)
     if (!req.currentUser || !req.currentUser.id) {
       res.status(401).json({
         success: false,
