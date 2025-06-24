@@ -1,54 +1,55 @@
-# POS Padi Express Backend
+# AgriCon Express Backend
 
-A robust backend service for managing POS operations, built with Node.js, TypeScript, and Prisma.
+A robust backend service for managing agricultural operations that connect farmers to storage facilities, built with Node.js, TypeScript, and Prisma.
 
 ## 🚀 Project Overview
 
-POS Padi Express provides a secure and scalable API for handling core features related to transactions, disputes, and notifications within a POS (Point of Sale) ecosystem.
+**AgriCon Nigeria** provides a secure and scalable API for facilitating connections between farmers and storage providers, enabling efficient storage of agricultural produce and reducing post-harvest losses.
 
 ### Key features include:
-- Transaction creation, listing, and per-agent analytics
-- Dispute management (create, view, update, delete, statistics)
-- Notification system with read tracking
+
+* Farmer registration and management
+* Storage facility registration and availability tracking
+* Produce storage requests and assignments
+* Notifications for storage confirmations and updates
+* Analytics on produce stored, storage utilization, and farmer activity
 
 ## 🛠️ Tech Stack
 
-- **Node.js**
-- **TypeScript**
-- **Express.js**
-- **Prisma ORM**
-- **MySQL**
-- **Jest** (for testing)
-
+* **Node.js**
+* **TypeScript**
+* **Express.js**
+* **Prisma ORM**
+* **MySQL**
+* **Jest** (for testing)
 
 ## 📦 Getting Started
 
 ### Prerequisites
 
-- Node.js ≥ 16.x
-- npm or yarn
-- MySQL
-- [Prisma CLI](https://www.prisma.io/docs/reference/api-reference/command-reference)
+* Node.js ≥ 16.x
+* npm or yarn
+* MySQL
+* [Prisma CLI](https://www.prisma.io/docs/reference/api-reference/command-reference)
 
+### Installation Instructions
 
-## Installation Instructions
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/InternPulse/pos-padi-express-backend.git
-```
-
-2. Change into the parent directory:
+1️⃣ Clone the repository:
 
 ```bash
-cd pos-padi-express-backend
+git clone https://github.com/InternPulse/agricon-express-backend.git
 ```
 
-3. Set appropriate values for the following Compulsory Environment Variables:
+2️⃣ Change into the directory:
+
+```bash
+cd agricon-express-backend
+```
+
+3️⃣ Set the required environment variables:
 
 ```txt
-# Postgres connection string
+# MySQL connection string
 DATABASE_URL=""
 # Secret key for signing JWTs
 JWT_SECRET_KEY=
@@ -56,84 +57,100 @@ JWT_SECRET_KEY=
 PORT=5000
 ```
 
-4. Install the App dependencies:
+4️⃣ Install dependencies:
 
 ```bash
 npm install
 ```
 
-5. Generate Prisma client and apply migrations:
+5️⃣ Generate Prisma client & apply migrations:
 
 ```bash
 npx prisma generate
 npx prisma migrate deploy
 ```
 
-6. Start the App:
+6️⃣ Start the application:
 
 ```bash
 npm run dev
 ```
 
-The API should now be running locally at [http://localhost:5000/](http://localhost:5000/)
+The API will be accessible at [http://localhost:5000/](http://localhost:5000/)
 
 ## 📄 API Documentation
-You can explore and test the endpoints via the live Postman documentation:
 
+You can explore and test endpoints via our Postman collection:
 🔗 [View Postman Collection](https://documenter.getpostman.com/view/43614350/2sB2ixjZkQ)
 
-##  🔌 Available Endpoints
-Here's an overview of available routes:
+## 🔌 Available Endpoints
 
-### 📁 Disputes
+### 👨‍🌾 Farmers
+
 ```
-GET /api/v1/disputes – List all disputes
+POST /api/v1/farmers – Register a new farmer
 
-GET /api/v1/disputes/:id – Get a single dispute by ID
+GET /api/v1/farmers – List all farmers
 
-POST /api/v1/disputes – Create a new dispute
-
-PUT /api/v1/disputes/:id – Update a dispute
-
-DELETE /api/v1/disputes/:id – Delete a dispute
-
-GET /api/v1/disputes/stats – Get dispute statistics
+GET /api/v1/farmers/:id – Get details of a specific farmer
 ```
+
+### 🏬 Storage Facilities
+
+```
+POST /api/v1/storage-facilities – Register a new storage facility
+
+GET /api/v1/storage-facilities – List all storage facilities
+
+GET /api/v1/storage-facilities/:id – Get details of a specific facility
+
+GET /api/v1/storage-facilities/availability – Get available facilities
+```
+
+### 📦 Produce Storage
+
+```
+POST /api/v1/storage-requests – Create a produce storage request
+
+GET /api/v1/storage-requests – List all storage requests
+
+GET /api/v1/storage-requests/:id – Get details of a storage request
+
+PUT /api/v1/storage-requests/:id – Update a storage request
+
+DELETE /api/v1/storage-requests/:id – Cancel a storage request
+```
+
 ### 🔔 Notifications
+
 ```
-POST /api/v1/notifications – Create a new notification
+POST /api/v1/notifications – Send a notification
 
-GET /api/v1/notifications – Get all notifications (with query filters)
+GET /api/v1/notifications – List all notifications
 
-GET /api/v1/notifications/:id – Get a single notification by ID
-
-PATCH /api/v1/notifications/:id/read – Mark a notification as read
+PATCH /api/v1/notifications/:id/read – Mark as read
 ```
 
-### 💳 Transactions
+### 📊 Analytics
+
 ```
-POST /api/v1/transactions – Create a new transaction
+GET /api/v1/analytics/storage – Get storage utilization stats
 
-GET /api/v1/transactions – List all transactions
-
-GET /api/v1/transactions/:id – Get a transaction by ID
-
-PUT /api/v1/transactions/:id – Update a transaction
-
-DELETE /api/v1/transactions/:id – Delete a transaction
-
-GET /api/v1/transactions/stats – Get overall transaction statistics
-
-GET /api/v1/transactions/agent/:agent_id/stats – Get transaction stats for a specific agent
+GET /api/v1/analytics/farmers – Get farmer activity stats
 ```
-#### (More endpoints available in the Postman Docs)
 
 ## 🧪 Running Tests
-```npm test```
+
+Run unit and integration tests:
+
+```bash
+npm test
+```
 
 ## 🧑‍💻 Contributing
 
-- Fork the repo
-- Create your branch (git checkout -b feat/feature-name)
-- Commit your changes
-- Push and open a Pull Request
+* Fork this repository
+* Create your feature branch (`git checkout -b feat/feature-name`)
+* Commit your changes (`git commit -m 'Add feature'`)
+* Push to the branch (`git push origin feat/feature-name`)
+* Open a Pull Request
