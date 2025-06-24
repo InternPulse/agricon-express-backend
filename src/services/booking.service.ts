@@ -225,3 +225,35 @@ export const updateBookingStatus = async (id: bigint, status: BookingStatus): Pr
   });
 };
 
+
+// approve or reject booking
+export const approveOrRejectBooking = async (
+  bookingId: bigint,
+  operatorId: bigint,
+  approve: boolean
+): Promise<Booking> => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { facility: true },
+  });
+
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+
+  if (booking.facility.operatorId !== operatorId) {
+    throw new Error("Unauthorized: You do not own this facility");
+  }
+
+  return prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      approved: approve,
+    },
+    include: {
+      facility: true,
+      farmer: true,
+    },
+  });
+};
+

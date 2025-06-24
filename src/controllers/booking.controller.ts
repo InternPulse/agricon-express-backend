@@ -7,6 +7,7 @@ import {
   getFacilityBookings,
   getFarmerBookings,
   updateBookingStatus,
+  approveOrRejectBooking,
 } from "../services/booking.service";
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import { StatusCodes } from "http-status-codes";
@@ -182,6 +183,34 @@ export const expireBooking = async (
     res.status(200).json({
       status: "success",
       data: booking,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// accept or reject booking
+export const approveOrRejectBookingHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    const { approve } = req.body; // expects a boolean
+    const operatorId = BigInt(req.currentUser.id);
+
+    if (typeof approve !== 'boolean') {
+    res.status(400).json({ success: false, message: "Approve must be a boolean" });
+    }
+
+    const updatedBooking = await approveOrRejectBooking(BigInt(bookingId), operatorId, approve);
+
+    res.status(200).json({
+      success: true,
+      message: `Booking ${approve ? "approved" : "rejected"} successfully`,
+      data: updatedBooking,
     });
   } catch (error) {
     next(error);
