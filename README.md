@@ -83,6 +83,37 @@ The API will be accessible at [http://localhost:5000/](http://localhost:5000/)
 You can explore and test endpoints via our Postman collection:
 🔗 [View Postman Collection](https://documenter.getpostman.com/view/43614350/2sB2ixjZkQ)
 
+## 🛡️ Rate Limiting
+
+This API implements comprehensive rate limiting to prevent abuse and ensure fair usage. Different endpoints have specific rate limits based on their usage patterns:
+
+### Rate Limit Configuration
+
+| Endpoint Type | Rate Limit | Window | Description |
+|---------------|------------|--------|-------------|
+| **General** | 100 requests | 15 minutes | Applied globally to all endpoints |
+| **Booking Operations** | 10 requests | 1 hour | For booking creation, updates, and management |
+| **Facility Operations** | 20 requests | 15 minutes | For facility management and queries |
+| **Health Check** | 30 requests | 1 minute | For health monitoring endpoints |
+| **Database Operations** | 5 requests | 5 minutes | For database initialization and maintenance |
+
+### Rate Limit Headers
+
+When rate limits are exceeded, the API returns:
+- **Status Code**: `429 Too Many Requests`
+- **Headers**: `RateLimit-*` headers with limit information
+- **Response**: JSON with error message and retry time
+
+### Example Rate Limit Response
+
+```json
+{
+  "success": false,
+  "message": "Too many requests from this IP, please try again later.",
+  "retryAfter": "15 minutes"
+}
+```
+
 ## 🔌 Available Endpoints
 
 ### 👨‍🌾 Farmers
