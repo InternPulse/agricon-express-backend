@@ -241,10 +241,6 @@ export const approveOrRejectBooking = async (
     throw new Error("Booking not found");
   }
 
-  if (booking.facility.operatorId !== operatorId) {
-    throw new Error("Unauthorized: You do not own this facility");
-  }
-
   return prisma.booking.update({
     where: { id: bookingId },
     data: {
