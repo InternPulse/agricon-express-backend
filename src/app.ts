@@ -3,6 +3,7 @@ import bookingRoutes from './routes/booking.routes';
 import facilityRoutes from './routes/facility.routes';
 import { BaseError, IErrorResponse } from './errors/errors';
 import { healthCheck, test_db } from './test_database.ts/test_db';
+import './cron/expireBookings'; 
 
 const app = express();
 app.use(express.json());
