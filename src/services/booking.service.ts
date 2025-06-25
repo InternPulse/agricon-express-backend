@@ -87,7 +87,7 @@ export const createBooking = async (data: CreateBookingParams) => {
     const overlappingBookings = await prisma.booking.count({
       where: {
         facilityId: BigInt(data.facilityId),
-        active: true,
+        active: false,
         startDate: { lt: data.endDate },
         endDate: { gt: data.startDate },
       },
