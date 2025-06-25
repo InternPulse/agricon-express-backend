@@ -11,7 +11,5 @@ router.get('/', verifyAuth, getAllFacility);
 router.get('/:facilityId', verifyAuth,  getFacility);
 router.put('/:facilityId', verifyAuth, isFacilityOwner, updateFacility);
 router.delete('/:facilityId', verifyAuth, isFacilityOwner, removeFacility);
-router.get('/get', getAllFacilitiesController);
-router.get('/:operatorId', getFacilitiesByOperatorController);
 
 export default router;
