@@ -2,8 +2,8 @@ import express from 'express';
 import { facilityValidator } from '../utils/validateFacility';
 import { verifyAuth } from '../middlewares/authenticate.middleware';
 
-import { isFacilityOwner, isOperator } from '../middlewares/authorization.middlewares';
-import {  addFacility,getFacility, updateFacility, getAllFacility, removeFacility, getAllFacilitiesController, getFacilitiesByOperatorController } from '../controllers/facility.controller';
+import { isAuthorizedOperator, isFacilityOwner } from '../middlewares/authorization.middlewares';
+import {  addFacility,getFacility, updateFacility, getAllFacility, removeFacility } from '../controllers/facility.controller';
 
 const router = express.Router();
 
