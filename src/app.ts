@@ -11,10 +11,6 @@ app.use(express.json());
   return this.toString(); 
 };
 
-(BigInt.prototype as any).toJSON = function () {
-  return this.toString();    
-};
-
 const BASE_URL = '/api/v1';
 // Middleware
 
