@@ -190,7 +190,6 @@ export const getFacilitiesByOperator = async (options: GetByOperatorOptions) => 
 };
 
 
-
 export const uploadImageToCloudinary = async(buffer: Buffer, folder: string='facilities'): Promise<string> => {
   try {
     return new Promise((resolve, reject) => {
@@ -259,3 +258,31 @@ export const deleteImageFromCloudinary = async(imageUrl: string): Promise<void>=
     throw error
   }
 }
+=======
+export const updateAvailableFacility = async (facilityId: bigint ) => {
+//Counts confirmed booking for the facility  
+  const confirmedBookingsCount = await prisma.booking.count({
+    where: {
+      facilityId: facilityId,
+      active: true,
+    },
+  });
+
+// Fetch total capacity from facility
+  const facilityCapacity = await prisma.facility.findUnique({
+    where: { id: facilityId },
+    select: { capacity: true },
+  });
+
+  if (!facilityCapacity) {
+    throw new Error(`Facility with ID ${facilityId} not found.`);
+  };
+
+//Update Facility with available facility
+  const newAvailableCapacity = facilityCapacity.capacity - confirmedBookingsCount;
+
+  await prisma.facility.update({
+    where: { id: facilityId },
+    data: { capacity: newAvailableCapacity },
+  });
+};

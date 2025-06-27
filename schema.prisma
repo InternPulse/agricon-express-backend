@@ -196,8 +196,9 @@ model Booking {
   facilityId   BigInt
   farmerId     BigInt
   amount       Float
-  paid         Boolean         @default(false)
-  active       Boolean         @default(false)
+  paid         Boolean      @default(false)
+  active       Boolean      @default(false)
+  approved     Boolean?
   startDate    DateTime
   endDate      DateTime
   createdAt    DateTime        @default(now())

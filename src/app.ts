@@ -11,6 +11,7 @@ import {
   databaseRateLimiter
 } from './middlewares/rateLimit.middleware';
 import { configCors } from './config/config.env';
+import './cron/expireBookings'; 
 
 const app = express();
 app.use(configCors())
