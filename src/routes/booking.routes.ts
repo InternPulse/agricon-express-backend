@@ -2,6 +2,7 @@ import express from 'express';
 import { validateBookingId } from '../middlewares/bookingValidation';
 import { isFacilityOwner, isFarmer } from '../middlewares/authorization.middlewares';
 import { verifyAuth } from '../middlewares/authenticate.middleware';
+import { updateBookingHandler } from '../controllers/updatebooking.controller';
 import { createBookingHandler, deleteBookingHandler, expireBooking, fetchBooking, listFacilityBookings, listFarmerBookings, approveOrRejectBookingHandler } from '../controllers/booking.controller';
 import { preventDateUpdateIfPaid } from '../middlewares/bookingDateValidator';
 
