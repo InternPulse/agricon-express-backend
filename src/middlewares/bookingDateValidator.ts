@@ -15,7 +15,7 @@ export const preventDateUpdateIfPaid = async (
   };
 
   const booking = await prisma.booking.findUnique({
-    where: { id: BigInt(bookingId) },
+    where: { id: Number(bookingId) },
     select: { paid: true }
   });
 
