@@ -3,8 +3,12 @@ import bookingRoutes from './routes/booking.routes';
 import facilityRoutes from './routes/facility.routes';
 import { BaseError, IErrorResponse } from './errors/errors';
 import { healthCheck, test_db } from './test_database.ts/test_db';
+import { configCors } from './config/config.env';
 
 const app = express();
+
+app.use(configCors());
+
 app.use(express.json());
 
 (BigInt.prototype as any).toJSON = function () {
