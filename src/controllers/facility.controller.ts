@@ -1,11 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { create, get, getAll, update, 
-  deleteFacility, 
-  getAllFacilities, 
-  getFacilitiesByOperator, 
-  updateAvailableFacility} from "../services/db/facility.service";
+import { create, get, getAll, update, deleteFacility, getAllFacilities, getFacilitiesByOperator, updateAvailableFacility, uploadImageToCloudinary, updateFacilityImage, deleteImageFromCloudinary} from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/errors";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient()
 
 export const addFacility = async (req: Request, res: Response, next: NextFunction) => {
  try {
@@ -18,6 +16,89 @@ export const addFacility = async (req: Request, res: Response, next: NextFunctio
     next(error);
  }
 }
+
+
+export const uploadFacilityImage = async(req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {facilityId} = req.params;
+    if(!req.file){
+      throw new BadRequestError({
+        message: "No image file provided",
+        from: "UploadFacilityImage()",
+      })
+    }
+
+    const facility = await get(BigInt(facilityId));
+    if(!facility){
+      throw new NotFoundError({
+        message: "Facility not found",
+        from: "UploadFacilityImage"
+      })
+    }
+
+    const imageUrl = await uploadImageToCloudinary(req.file.buffer, 'facilities');
+    const updatedFacility = await updateFacilityImage(BigInt(facilityId), imageUrl);
+    res.status(200).json({
+      success: true,
+      message: "Facility Image Uploaded successfully",
+      data: {
+        facilityId: updatedFacility.id,
+        imageUrl: updatedFacility.facilityImage
+      }
+    })
+  } catch (error) {
+    next(error)
+    res.status(403).json({
+      status: "Failed",
+      message: "Unable to upload image"
+    })
+    console.log(error)
+  }
+}
+
+
+
+export const deleteFacilityImage = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {facilityId} = req.params;
+    const { imageUrl} = req.body;
+    await deleteImageFromCloudinary(imageUrl)
+
+    const facility = await prisma.facility.findUnique({
+      where: {id: BigInt(facilityId)}
+    })
+    if(!facility) {
+      res.status(404).json({ 
+        status: "failed",
+        message: 'Facility not found'
+      });
+      return 
+    }
+
+    const updatedImages = facility.facilityImage.filter(img => img !== imageUrl);
+
+    // Update facility with remaining images
+    await prisma.facility.update({
+      where: { id: BigInt(facilityId)},
+      data: { facilityImage: updatedImages}
+    })
+
+     res.status(200).json({
+      status: "Deleted",
+      message: 'Image deleted successfully' 
+    });
+
+    return
+  } catch (error: any) {
+     console.error('Error deleting image:', error);
+    res.status(500).json({
+      status: "Failed",
+      message: 'Failed to delete image',
+      error: error.message
+    });
+  }
+}
+
 
 export const getFacility = async (req: Request, res: Response) => {
   try {

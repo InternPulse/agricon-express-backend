@@ -35,6 +35,17 @@ export const isAuthorizedOperator = async (req: Request, res: Response, next: Ne
   next();
 }
 
+export const isAuthorizedToCreateFacility = (req: Request, res: Response, next: NextFunction)=>{
+  if(!req.currentUser || req.currentUser.role !== UserRole.OPERATOR){
+    res.status(403).json({
+      status: "Failed",
+      message: "User must be an operator to create facility",
+      from: "isAuthorizedToCreateFacility Middleware"
+    })
+  }
+  next();
+}
+
 export const isFarmer = (req: Request, res: Response, next: NextFunction) => {
   if(!req.currentUser || req.currentUser.role !== UserRole.FARMER) {
     throw new UnauthorizedError({message: "user must be a registered farmer", from: "isfarmer middleware"})

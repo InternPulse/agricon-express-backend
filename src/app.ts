@@ -10,9 +10,11 @@ import {
   healthCheckRateLimiter,
   databaseRateLimiter
 } from './middlewares/rateLimit.middleware';
+import { configCors } from './config/config.env';
 import './cron/expireBookings'; 
 
 const app = express();
+app.use(configCors())
 app.use(express.json());
 
 (BigInt.prototype as any).toJSON = function () {
@@ -43,10 +45,5 @@ app.use((error: IErrorResponse, _req: Request, res: Response, next: NextFunction
   next();
 });
 
-// app.all('*', (req: Request, res: Response) => {
-//   res.status(StatusCodes.NOT_FOUND).json({
-//     message: `Route ${req.originalUrl} not found`
-//   });
-// });
 
 export default app;
