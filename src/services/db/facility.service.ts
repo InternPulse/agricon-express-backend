@@ -258,7 +258,7 @@ export const deleteImageFromCloudinary = async(imageUrl: string): Promise<void>=
     throw error
   }
 }
-=======
+
 export const updateAvailableFacility = async (facilityId: bigint ) => {
 //Counts confirmed booking for the facility  
   const confirmedBookingsCount = await prisma.booking.count({

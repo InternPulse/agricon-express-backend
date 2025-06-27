@@ -251,7 +251,7 @@ export const approveOrRejectBooking = async (
   approve: boolean
 ): Promise<Booking> => {
   const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
+    where: { id: Number(bookingId) },
     include: { facility: true },
   });
 
@@ -260,7 +260,7 @@ export const approveOrRejectBooking = async (
   }
 
   return prisma.booking.update({
-    where: { id: bookingId },
+    where: { id: Number(bookingId) },
     data: {
       approved: approve,
     },
