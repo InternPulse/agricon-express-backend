@@ -25,6 +25,16 @@ export const isOperator = (req: Request, res: Response, next: NextFunction) => {
   next();
 }
 
+export const isAuthorizedOperator = async (req: Request, res: Response, next: NextFunction) => {
+  const operator = await prisma.operator.findUnique({
+    where: { user_id: req.currentUser.id },
+  });
+  if(!operator || operator.id !== req.body.operatorId) {
+    throw new UnauthorizedError({message: "user must be authorized operator", from: "isOperator middleware"})
+  }
+  next();
+}
+
 export const isFarmer = (req: Request, res: Response, next: NextFunction) => {
   if(!req.currentUser || req.currentUser.role !== UserRole.FARMER) {
     throw new UnauthorizedError({message: "user must be a registered farmer", from: "isfarmer middleware"})

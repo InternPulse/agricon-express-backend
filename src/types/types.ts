@@ -148,7 +148,7 @@ export interface CreateBookingParams {
 
 export interface FacilityFilterOptions {
   page: number;
-  limit: number;
+  limit: number | 10;
   location?: string;
   type?: 'DRYER' | 'STORAGE' | 'PROCESSING' | 'OTHER';
   available?: boolean;
