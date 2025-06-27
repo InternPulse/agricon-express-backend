@@ -141,7 +141,7 @@ export const updateBooking = async (
   }
 ): Promise<Booking> => {
   return await prisma.booking.update({
-    where: { id },
+    where: { id: Number(id) },
     data: {
       startDate: data.startDate,
       endDate: data.endDate,
@@ -160,7 +160,7 @@ export const updateBooking = async (
 
 export const getBookingById = async (id: bigint): Promise<Booking | null> => {
   return await prisma.booking.findUnique({
-    where: { id },
+    where: { id: Number(id) },
     include: {
       facility: true,
       farmer: true,
@@ -170,7 +170,7 @@ export const getBookingById = async (id: bigint): Promise<Booking | null> => {
 
 export const deleteBooking = async (id: bigint): Promise<void> => {
   await prisma.booking.delete({
-    where: { id },
+    where: { id: Number(id) },
   });
 };
 
@@ -216,7 +216,7 @@ export const getFacilityBookings = async (operatorId: bigint, page: number = 1, 
 
 export const updateBookingStatus = async (id: bigint, status: BookingStatus): Promise<Booking> => {
   return await prisma.booking.update({
-    where: { id },
+    where: { id: Number(id) },
     data: { active: status === BookingStatus.ACTIVE },
     include: {
       facility: true,

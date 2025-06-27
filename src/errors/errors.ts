@@ -3,7 +3,8 @@ import { StatusCodes } from "http-status-codes";
 interface IError {
   message: string,
   statusCode?: string,
-  from: string
+  from: string,
+  cause?: any
 };
 
 export interface IErrorResponse {

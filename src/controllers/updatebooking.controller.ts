@@ -41,7 +41,7 @@ export const updateBookingHandler = async (req: Request, res: Response): Promise
 
     // Check if booking exists and belongs to the user
     const existingBooking = await prisma.booking.findUnique({
-      where: { id: BigInt(bookingId) },
+      where: { id: Number(bookingId) },
       include: { farmer: true }
     });
 
@@ -70,7 +70,7 @@ export const updateBookingHandler = async (req: Request, res: Response): Promise
       const overlappingBooking = await prisma.booking.findFirst({
         where: {
           facilityId: existingBooking.facilityId,
-          id: { not: BigInt(bookingId) }, 
+          id: { not: Number(bookingId) }, 
           OR: [
             {
               startDate: { lte: endDate },

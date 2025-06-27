@@ -77,11 +77,12 @@ export interface Facility {
   operatorId: bigint;
   location: string;
   pricePerDay: number;
+  facilityImage?: String[] | string;
   type: FacilityType;
   available: boolean;
   contact: string;
   description: string | null;
-  capacity: number; // Optional field for capacity
+  capacity?: number; 
   createdAt: Date;
   updatedAt: Date;
 

@@ -12,7 +12,7 @@ model Farmer {
   firstName String    @db.VarChar(100)
   lastName  String    @db.VarChar(100)
   phone     String    @unique @db.VarChar(20)
-  address   String?   @db.VarChar(255)
+  address   String    @db.VarChar(255)
   createdAt DateTime  @db.Timestamptz(6)
   updatedAt DateTime  @db.Timestamptz(6)
   user_id   String    @unique @db.Uuid
@@ -27,7 +27,7 @@ model Operator {
   lastName     String     @db.VarChar(100)
   phone        String     @unique @db.VarChar(20)
   businessName String?    @db.VarChar(255)
-  address      String?    @db.VarChar(255)
+  address      String     @db.VarChar(255)
   createdAt    DateTime   @db.Timestamptz(6)
   updatedAt    DateTime   @db.Timestamptz(6)
   user_id      String     @unique @db.Uuid
@@ -175,48 +175,52 @@ model users_user_user_permissions {
 }
 
 model Facility {
-  id          BigInt       @id @default(autoincrement())
-  operatorId  BigInt
-  location    String
-  type        FacilityType
-  available   Boolean      @default(true)
-  capacity    Int          @default(0)
-  contact     String
-  description String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  pricePerDay Float
-  bookings    Booking[]
-  operator    Operator     @relation(fields: [operatorId], references: [id])
+  id            BigInt       @id @default(autoincrement())
+  operatorId    BigInt
+  location      String
+  type          FacilityType
+  available     Boolean      @default(true)
+  capacity      Int          @default(0)
+  contact       String
+  description   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  pricePerDay   Float
+  facilityImage String[]     @default([])
+  bookings      Booking[]
+  operator      Operator     @relation(fields: [operatorId], references: [id])
 }
 
 model Booking {
-  id           BigInt       @id @default(autoincrement())
+  id           Int             @id @default(autoincrement())
   facilityId   BigInt
   farmerId     BigInt
   amount       Float
-  paid         Boolean      @default(false)
-  active       Boolean      @default(false)
+  paid         Boolean         @default(false)
+  active       Boolean         @default(false)
   startDate    DateTime
   endDate      DateTime
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  facility     Facility     @relation(fields: [facilityId], references: [id])
-  farmer       Farmer       @relation(fields: [farmerId], references: [id])
-  transactions Transaction?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  status       booking_status? @default(RESERVED)
+  approved     Boolean?        @default(false)
+  approvedAt   DateTime?       @db.Timestamp(6)
+  facility     Facility        @relation(fields: [facilityId], references: [id])
+  farmer       Farmer          @relation(fields: [farmerId], references: [id])
+  transactions Transaction[]
 }
 
 model Transaction {
-  id            BigInt                 @id @default(autoincrement())
-  bookingId     BigInt                 @unique
-  description   TransactionDescription
-  paymentMethod String
-  amount        Float
-  status        TransactionStatus      @default(PENDING)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  ref           String                 @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  booking       Booking                @relation(fields: [bookingId], references: [id])
+  id            Int       @id @default(autoincrement())
+  bookingId     Int
+  description   String
+  paymentMethod String    @db.VarChar(20)
+  amount        Float?
+  status        String
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime? @updatedAt @db.Timestamp(6)
+  ref           String    @unique
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_booking")
 }
 
 enum FacilityType {
@@ -226,16 +230,8 @@ enum FacilityType {
   OTHER
 }
 
-enum TransactionDescription {
-  BOOKING
-  EXTENSION
-  PENALTY
-  OTHER
-}
-
-enum TransactionStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
+enum booking_status {
+  RESERVED
+  CANCELLED
+  CONFIRMED
 }

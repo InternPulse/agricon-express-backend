@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { BadRequestError, BaseError } from "../errors/errors";
+import { BaseError } from "../errors/errors";
 import {
   createBooking,
   deleteBooking,
@@ -32,13 +32,11 @@ export const createBookingHandler = async (
       data: booking,
     });
   } catch (error) {
-    throw new BadRequestError({
-      message:
-        error instanceof Error
-          ? error.message
-          : "An error occurred while creating the booking",
-      from: "createBookingHandler()",
-    });
+    console.log(error)
+    res.status(500).json({
+      success: false,
+       message: error instanceof Error ? error.message : String(error),
+    })
   }
 };
 
