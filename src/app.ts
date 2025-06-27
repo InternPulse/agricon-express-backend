@@ -10,6 +10,7 @@ import {
   healthCheckRateLimiter,
   databaseRateLimiter
 } from './middlewares/rateLimit.middleware';
+import './cron/expireBookings'; 
 
 const app = express();
 app.use(express.json());

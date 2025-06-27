@@ -10,7 +10,7 @@ import { preventDateUpdateIfPaid } from '../middlewares/bookingDateValidator';
 const router = express.Router();
 router.get('/farmer/me', verifyAuth, isFarmer, listFarmerBookings);
 router.get('/operator/me', verifyAuth, isFacilityOwner, listFacilityBookings);
-router.post('/', verifyAuth, isFarmer, createBookingHandler)
+router.post('/', verifyAuth,isFarmer, createBookingHandler)
 router.get('/:bookingId', verifyAuth, validateBookingId, fetchBooking)
 router.patch('/:bookingId', verifyAuth, validateBookingId, preventDateUpdateIfPaid, updateBookingHandler);
 router.delete('/:bookingId', validateBookingId, deleteBookingHandler);
