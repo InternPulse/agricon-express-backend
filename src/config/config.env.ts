@@ -11,7 +11,6 @@ export const config = {
   JWT_SECRET: process.env.JWT_SECRET,
 } as const;
 
-
 export const configCors = ()=> {
     return cors({
         origin: (origin, callback) => {
