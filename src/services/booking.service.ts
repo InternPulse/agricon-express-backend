@@ -243,6 +243,7 @@ export const expireReservation = async (): Promise<void> => {
   });
 
   console.log(`Expired ${result.count} unpaid bookings older than 2 hours`);
+}
 // approve or reject booking
 export const approveOrRejectBooking = async (
   bookingId: bigint,
