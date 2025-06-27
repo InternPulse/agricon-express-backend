@@ -183,3 +183,31 @@ export const getFacilitiesByOperator = async (options: GetByOperatorOptions) => 
     throw new BaseError("Failed to fetch facilities by operator", StatusCodes.INTERNAL_SERVER_ERROR);
   }
 };
+
+export const updateAvailableFacility = async (facilityId: bigint ) => {
+//Counts confirmed booking for the facility  
+  const confirmedBookingsCount = await prisma.booking.count({
+    where: {
+      facilityId: facilityId,
+      active: true,
+    },
+  });
+
+// Fetch total capacity from facility
+  const facilityCapacity = await prisma.facility.findUnique({
+    where: { id: facilityId },
+    select: { capacity: true },
+  });
+
+  if (!facilityCapacity) {
+    throw new Error(`Facility with ID ${facilityId} not found.`);
+  };
+
+//Update Facility with available facility
+  const newAvailableCapacity = facilityCapacity.capacity - confirmedBookingsCount;
+
+  await prisma.facility.update({
+    where: { id: facilityId },
+    data: { capacity: newAvailableCapacity },
+  });
+};

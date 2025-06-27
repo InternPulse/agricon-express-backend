@@ -1,5 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { create, get, getAll, update, deleteFacility, getAllFacilities, getFacilitiesByOperator} from "../services/db/facility.service";
+import { create, get, getAll, update, 
+  deleteFacility, 
+  getAllFacilities, 
+  getFacilitiesByOperator, 
+  updateAvailableFacility} from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/errors";
 
@@ -140,5 +144,18 @@ export const getFacilitiesByOperatorController = async (req: Request, res: Respo
 
   } catch (err) {
    next(err)
+  }
+};
+
+export const updateFacilityCapacity = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const facilityId = BigInt(req.params.facilityId);
+    const updateCapacity = await updateAvailableFacility(facilityId);
+    res.status(StatusCodes.OK).json({
+    message: "Facility Capacity update successful",
+    data: updateCapacity
+  });
+  } catch (error) {
+    next(error)
   }
 };
