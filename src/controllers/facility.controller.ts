@@ -69,7 +69,7 @@ export const removeFacility = async (req: Request, res: Response, next: NextFunc
 export const getAllFacilitiesController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
-    const limit = Math.min(Number(req.query.limit) || 10, 100);
+    const limit = Math.min(Number(req.query.limit) || 10, 15);
 
     const availableParam = req.query.available;
     let available: boolean | undefined;

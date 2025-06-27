@@ -31,28 +31,45 @@ export const get = async (facilityId: bigint) => {
   } catch {
     throw new NotFoundError({message: `Facility with ID ${facilityId} not found`, from: "get()"});
   }
-}
+};
 
 export const update = async (facilityId: bigint, data: FacilityUpdateData) => {
   try {
-  const updateData = { ...data } as unknown as any;
-  if (updateData.type !== undefined) {
-    updateData.type = { set: updateData.type };
-  }
+    const facility = await prisma.facility.findUnique({
+      where: { id: BigInt(facilityId) },
+    });
 
-  const updatedFacility = await prisma.facility.update({
-    where: {
-      id: BigInt(facilityId),
-    },
-    data: updateData,
-  });
+    if (!facility) {
+      throw new NotFoundError({
+        message: `Facility with ID ${facilityId} not found`,
+        from: "update()",
+      });
+    }
 
-  return updatedFacility;
+    const updateData = { ...data } as unknown as any;
+    if (updateData.type !== undefined) {
+      updateData.type = { set: updateData.type };
+    }
 
-  } catch {
-    throw new BadRequestError({message: `Error updating facility with ID ${facilityId}`, from: "update()"});
+    const updatedFacility = await prisma.facility.update({
+      where: {
+        id: BigInt(facilityId),
+      },
+      data: updateData,
+    });
+
+    return updatedFacility;
+
+  } catch (err) {
+    if (err instanceof NotFoundError) throw err;
+    throw new BadRequestError({
+      message: `Error updating facility with ID ${facilityId}`,
+      from: "update()"
+    });
   }
 };
+
+
 
 
 export const getAll = async () => {
@@ -96,7 +113,7 @@ export const getAllFacilities = async (filters: FacilityFilterOptions) => {
     if (location) {
       where.OR = [
         { location: { contains: location, mode: "insensitive" } },
-        { description: { contains: location, mode: "insensitive" } }
+        { address: { contains: location, mode: "insensitive" } }
       ];
     }
 
