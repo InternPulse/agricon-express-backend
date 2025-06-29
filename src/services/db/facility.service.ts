@@ -116,10 +116,7 @@ export const getAllFacilities = async (filters: FacilityFilterOptions) => {
     const where: any = {};
 
     if (location) {
-      where.OR = [
-        { location: { contains: location, mode: "insensitive" } },
-        { address: { contains: location, mode: "insensitive" } }
-      ];
+      where.location = { contains: location, mode: "insensitive" }
     }
 
     if (type) where.type = type.toUpperCase();
@@ -152,9 +149,8 @@ export const getAllFacilities = async (filters: FacilityFilterOptions) => {
       filtersApplied: { location, type, available, minPrice, maxPrice }
     };
   } catch (error) {
-    console.log(error);
     throw new BadRequestError({
-      message: 'Error fetching all facilities',
+      message: `Error fetching all facilities: ${JSON.stringify(error)}`,
       from: "getAllFacilities()",
     });
   }

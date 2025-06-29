@@ -32,11 +32,10 @@ export const createBookingHandler = async (
       message: "Booking created successfully",
       data: booking,
     });
-  } catch (error) {
-    console.log(error)
+  } catch (error: any) {
     res.status(500).json({
       success: false,
-       message: error instanceof Error ? error.message : String(error),
+       message: error.errors[0].message || String(error),
     })
   }
 };
@@ -196,14 +195,13 @@ export const approveOrRejectBookingHandler = async (
 ): Promise<void> => {
   try {
     const { bookingId } = req.params;
-    const { approve } = req.body; // expects a boolean
-    const operatorId = BigInt(req.currentUser.id);
+    const { approve } = req.body;
 
     if (typeof approve !== 'boolean') {
     res.status(400).json({ success: false, message: "Approve must be a boolean" });
     }
 
-    const updatedBooking = await approveOrRejectBooking(BigInt(bookingId), operatorId, approve);
+    const updatedBooking = await approveOrRejectBooking(BigInt(bookingId), approve);
 
     res.status(200).json({
       success: true,

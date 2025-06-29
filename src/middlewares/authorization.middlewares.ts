@@ -29,7 +29,8 @@ export const isAuthorizedOperator = async (req: Request, res: Response, next: Ne
   const operator = await prisma.operator.findUnique({
     where: { user_id: req.currentUser.id },
   });
-  if(!operator || operator.id !== req.body.operatorId) {
+
+  if(!operator || Number(operator?.id) !== req.body.operatorId) {
     throw new UnauthorizedError({message: "user must be authorized operator", from: "isOperator middleware"})
   }
   next();
@@ -62,14 +63,14 @@ export const isFacilityOwner = async (req: Request, _res: Response, next: NextFu
       where: { id: facilityId },
       include: { operator: true } // Include operator details
     })
- 
+
     if (!facility || facility.operator.user_id !== req.currentUser.id) {
       throw new UnauthorizedError({message: "must be the facility owner", from: "isFacilityOwner middleware"})
     }
     req.facility = facility as unknown as Facility; // Attach facility to request object
     next();
-  } catch (error) {
-    throw new UnauthorizedError({message: `${error}`, from: "isFacilityOwner middleware"})
+  } catch {
+    throw new UnauthorizedError({message: "must be the facility owner", from: "isFacilityOwner middleware"})
   }
 }
 // export const checkBookingOwnership = async (

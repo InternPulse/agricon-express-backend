@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { create, get, getAll, update, deleteFacility, getAllFacilities, getFacilitiesByOperator, updateAvailableFacility, uploadImageToCloudinary, updateFacilityImage, deleteImageFromCloudinary} from "../services/db/facility.service";
+import { create, get, update, deleteFacility, getAllFacilities, getFacilitiesByOperator, updateAvailableFacility, uploadImageToCloudinary, updateFacilityImage, deleteImageFromCloudinary} from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
@@ -120,17 +120,17 @@ export const updateFacility = async (req: Request, res: Response) => {
   });
 };
 
-export const getAllFacility = async (req: Request, res: Response, next:NextFunction) => {
-  try {
-    const facilities = await getAll();
-    res.status(StatusCodes.OK).json({
-    success:true,
-    message: "Facility(s) fetch successful",
-    data: facilities});
-  } catch (error) {
-    next(error);
-  }
-}
+// export const getAllFacility = async (req: Request, res: Response, next:NextFunction) => {
+//   try {
+//     const facilities = await getAll();
+//     res.status(StatusCodes.OK).json({
+//     success:true,
+//     message: "Facility(s) fetch successful",
+//     data: facilities});
+//   } catch (error) {
+//     next(error);
+//   }
+// }
 
 
 export const removeFacility = async (req: Request, res: Response, next: NextFunction) => {
@@ -147,32 +147,31 @@ export const removeFacility = async (req: Request, res: Response, next: NextFunc
 };
 
 
-export const getAllFacilitiesController = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllFacility = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Number(req.query.limit) || 10, 15);
 
-    const availableParam = req.query.available;
-    let available: boolean | undefined;
-    if (availableParam === "true") available = true;
-    else if (availableParam === "false") available = false;
-    else if (availableParam !== undefined) {
-      throw new BadRequestError({
-        message: "`available` must be true or false",
-        from: "getAllFacilitiesController"
-      });
-    };
+  const filters: {
+    page: number;
+    limit: number;
+    location?: string;
+    type?: any;
+    minPrice?: number;
+    maxPrice?: number;
+    available?: boolean;
+  } = {
+    page,
+    limit,
+    location: req.query.location as string | undefined,
+    available: req.query.available === undefined ? undefined : req.query.available === "true" ? true : false,
+    type: (req.query.type as string | undefined)?.toUpperCase() as any,
+    minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
+    maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined
+  };
 
-    const filters = {
-      page,
-      limit,
-      location: req.query.location as string | undefined,
-      type: (req.query.type as string | undefined)?.toUpperCase() as any,
-      available,
-      minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
-      maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined
-    };
-
+  // filters.available = available;
+    
     // EXTRA VALIdation for type
     const validTypes = ["DRYER", "STORAGE", "PROCESSING", "OTHER"];
     if (filters.type && !validTypes.includes(filters.type)) {
