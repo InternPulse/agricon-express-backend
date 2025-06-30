@@ -4,6 +4,10 @@ export const facilityValidator = [
   body("operatorId")
     .notEmpty().withMessage("Operator ID is required"),
 
+  body("name")
+    .isString().withMessage("Name must be a string")
+    .notEmpty().withMessage("Name is required"),
+
   body("location")
     .isString().withMessage("Location must be a string")
     .notEmpty().withMessage("Location is required"),
