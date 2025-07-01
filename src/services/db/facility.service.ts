@@ -255,30 +255,11 @@ export const deleteImageFromCloudinary = async(imageUrl: string): Promise<void>=
   }
 }
 
-export const updateAvailableFacility = async (facilityId: bigint ) => {
-//Counts confirmed booking for the facility  
-  const confirmedBookingsCount = await prisma.booking.count({
-    where: {
-      facilityId: facilityId,
-      active: true,
-    },
-  });
-
-// Fetch total capacity from facility
-  const facilityCapacity = await prisma.facility.findUnique({
-    where: { id: facilityId },
-    select: { capacity: true },
-  });
-
-  if (!facilityCapacity) {
-    throw new Error(`Facility with ID ${facilityId} not found.`);
-  };
-
-//Update Facility with available facility
-  const newAvailableCapacity = facilityCapacity.capacity - confirmedBookingsCount;
-
-  await prisma.facility.update({
-    where: { id: facilityId },
-    data: { capacity: newAvailableCapacity },
-  });
+export const updateFacilityCapacity = async (facilityId: bigint, newCapacity: number) => {
+    const updatedFacility = await prisma.facility.update({
+      where: { id: facilityId },
+      data: { capacity: newCapacity },
+    });
+    return updatedFacility;
 };
+

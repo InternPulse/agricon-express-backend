@@ -187,6 +187,7 @@ model Facility {
   updatedAt     DateTime     @updatedAt
   pricePerDay   Float
   facilityImage String[]     @default([])
+  name          String       @db.VarChar(255)
   bookings      Booking[]
   operator      Operator     @relation(fields: [operatorId], references: [id])
 }

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { create, get, update, deleteFacility, getAllFacilities, getFacilitiesByOperator, updateAvailableFacility, uploadImageToCloudinary, updateFacilityImage, deleteImageFromCloudinary} from "../services/db/facility.service";
+import { create, get, update, deleteFacility, getAllFacilities, getFacilitiesByOperator, updateFacilityCapacity, uploadImageToCloudinary, updateFacilityImage, deleteImageFromCloudinary} from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
@@ -227,15 +227,28 @@ export const getFacilitiesByOperatorController = async (req: Request, res: Respo
   }
 };
 
-export const updateFacilityCapacity = async (req: Request, res: Response, next: NextFunction) => {
+
+export const updateCapacityController = async (req: Request, res: Response, next: NextFunction) => {
+  const facilityId = BigInt(req.params.facilityId);
+  const { capacity } = req.body;
+  const parsedCapacity = parseInt(capacity, 10)
+
+  if (!parsedCapacity || isNaN(parsedCapacity) || parsedCapacity < 0) {
+    res.status(StatusCodes.BAD_REQUEST).json({ 
+      message: "Capacity must be a positive number"
+    });
+    return;
+  }
   try {
-    const facilityId = BigInt(req.params.facilityId);
-    const updateCapacity = await updateAvailableFacility(facilityId);
-    res.status(StatusCodes.OK).json({
-    message: "Facility Capacity update successful",
-    data: updateCapacity
-  });
+    const updatedFacility = await updateFacilityCapacity(facilityId, parsedCapacity);
+    res.status(StatusCodes.OK).json({ 
+      message: 'Capacity updated successfully', 
+      data: updatedFacility
+    });
+    return;
+    
   } catch (error) {
     next(error)
+    return;
   }
 };
