@@ -256,15 +256,10 @@ export const deleteImageFromCloudinary = async(imageUrl: string): Promise<void>=
 }
 
 export const updateFacilityCapacity = async (facilityId: bigint, newCapacity: number) => {
-  try {
     const updatedFacility = await prisma.facility.update({
       where: { id: facilityId },
       data: { capacity: newCapacity },
     });
-
     return updatedFacility;
-  } catch (error) {
-   throw error;
-  }
 };
 

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { create, get, getAll, update, deleteFacility, getAllFacilities, getFacilitiesByOperator, updateFacilityCapacity, uploadImageToCloudinary, updateFacilityImage, deleteImageFromCloudinary} from "../services/db/facility.service";
+import { create, get, update, deleteFacility, getAllFacilities, getFacilitiesByOperator, updateFacilityCapacity, uploadImageToCloudinary, updateFacilityImage, deleteImageFromCloudinary} from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
