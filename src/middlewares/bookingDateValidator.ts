@@ -9,11 +9,6 @@ export const preventDateUpdateIfPaid = async (
 ) => {
   const { bookingId } = req.params;
 
-  const isModifyingDates = "startDate" in req.body || "endDate" in req.body;
-  if (!isModifyingDates) {
-    return next();
-  };
-
   const booking = await prisma.booking.findUnique({
     where: { id: Number(bookingId) },
     select: { paid: true }
