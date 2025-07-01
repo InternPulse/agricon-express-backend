@@ -229,7 +229,7 @@ export const getFacilitiesByOperatorController = async (req: Request, res: Respo
 };
 
 
-export const updateCapacityController = async (req: Request, res: Response) => {
+export const updateCapacityController = async (req: Request, res: Response, next: NextFunction) => {
   const facilityId = BigInt(req.params.facilityId);
   const { capacity } = req.body;
   const parsedCapacity = parseInt(capacity, 10)
@@ -249,9 +249,7 @@ export const updateCapacityController = async (req: Request, res: Response) => {
     return;
     
   } catch (error) {
-    res.status(StatusCodes.NOT_FOUND).json({ 
-      message: "Facility ID not found."
-    });
+    next(error)
     return;
   }
 };

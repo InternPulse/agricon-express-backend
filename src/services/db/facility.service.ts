@@ -268,10 +268,7 @@ export const updateFacilityCapacity = async (facilityId: bigint, newCapacity: nu
 
     return updatedFacility;
   } catch (error) {
-   throw new BadRequestError({
-      message: 'Error updating facility capacity',
-      from: 'updateFacilityCapcity()'
-    });
+   throw error;
   }
 };
 
