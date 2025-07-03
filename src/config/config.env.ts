@@ -9,6 +9,7 @@ export const config = {
   PORT: parseInt(process.env.PORT || '4000'),
   JWT_SECRET: process.env.JWT_SECRET,
 } as const;
+
 export const configCors = ()=> {
     return cors({
         origin: (origin, callback) => {

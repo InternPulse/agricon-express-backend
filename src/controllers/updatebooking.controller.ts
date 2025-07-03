@@ -6,28 +6,15 @@ import { updateBooking } from '../services/booking.service';
 export interface UpdateBookingRequest {
   startDate?: Date;
   endDate?: Date;
-  amount?: number;
-  paid?: boolean;
-  active?: boolean;
 }
 
 export const updateBookingHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     const { bookingId } = req.params;
-    if (!req.currentUser || !req.currentUser.id) {
-      res.status(401).json({
-        success: false,
-        message: 'Authentication required'
-      });
-      return;
-    }
 
     const bookingData: UpdateBookingRequest = {
       startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
       endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
-      amount: req.body.amount,
-      paid: req.body.paid,
-      active: req.body.active,
     };
 
     // Validate dates if both are provided
@@ -41,12 +28,11 @@ export const updateBookingHandler = async (req: Request, res: Response): Promise
 
     // Check if booking exists and belongs to the user
     const existingBooking = await prisma.booking.findUnique({
-      where: { id: BigInt(bookingId) },
+      where: { id: Number(bookingId) },
       include: { farmer: true }
     });
 
     if (!existingBooking) {
-        console.log("Booking does not exist")
       res.status(404).json({
         success: false,
         message: 'Booking not found or does not exist'
@@ -70,7 +56,7 @@ export const updateBookingHandler = async (req: Request, res: Response): Promise
       const overlappingBooking = await prisma.booking.findFirst({
         where: {
           facilityId: existingBooking.facilityId,
-          id: { not: BigInt(bookingId) }, 
+          id: { not: Number(bookingId) }, 
           OR: [
             {
               startDate: { lte: endDate },
@@ -98,8 +84,6 @@ export const updateBookingHandler = async (req: Request, res: Response): Promise
     });
 
   } catch (error) {
-
-
     if (error instanceof BaseError) {
           res.status(error.statusCode).json(error.toJSON());
         } else {

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { BadRequestError, BaseError } from "../errors/errors";
+import { BaseError } from "../errors/errors";
 import {
   createBooking,
   deleteBooking,
@@ -7,6 +7,7 @@ import {
   getFacilityBookings,
   getFarmerBookings,
   updateBookingStatus,
+  approveOrRejectBooking,
 } from "../services/booking.service";
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import { StatusCodes } from "http-status-codes";
@@ -31,14 +32,11 @@ export const createBookingHandler = async (
       message: "Booking created successfully",
       data: booking,
     });
-  } catch (error) {
-    throw new BadRequestError({
-      message:
-        error instanceof Error
-          ? error.message
-          : "An error occurred while creating the booking",
-      from: "createBookingHandler()",
-    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+       message: error.errors[0].message || String(error),
+    })
   }
 };
 
@@ -182,6 +180,33 @@ export const expireBooking = async (
     res.status(200).json({
       status: "success",
       data: booking,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// accept or reject booking
+export const approveOrRejectBookingHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    const { approve } = req.body;
+
+    if (typeof approve !== 'boolean') {
+    res.status(400).json({ success: false, message: "Approve must be a boolean" });
+    }
+
+    const updatedBooking = await approveOrRejectBooking(BigInt(bookingId), approve);
+
+    res.status(200).json({
+      success: true,
+      message: `Booking ${approve ? "approved" : "rejected"} successfully`,
+      data: updatedBooking,
     });
   } catch (error) {
     next(error);

@@ -77,11 +77,12 @@ export interface Facility {
   operatorId: bigint;
   location: string;
   pricePerDay: number;
+  facilityImage?: String[] | string;
   type: FacilityType;
   available: boolean;
   contact: string;
   description: string | null;
-  capacity: number; // Optional field for capacity
+  capacity?: number; 
   createdAt: Date;
   updatedAt: Date;
 
@@ -103,7 +104,7 @@ export enum BookingStatus{
   ACTIVE,
   INACTIVE,
   PENDING,
-  CANCELED,
+  CANCELLED,
   COMPLETED,
 }
 
@@ -148,7 +149,7 @@ export interface CreateBookingParams {
 
 export interface FacilityFilterOptions {
   page: number;
-  limit: number;
+  limit: number | 10;
   location?: string;
   type?: 'DRYER' | 'STORAGE' | 'PROCESSING' | 'OTHER';
   available?: boolean;

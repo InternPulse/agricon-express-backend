@@ -65,11 +65,9 @@ export const createBooking = async (data: CreateBookingParams) => {
     });
 
     if (!facility) {
-      console.log("Facility not found")
       throw { status: "Failed", message: "Facility not found" };
     }
     if (!facility.available) {
-      console.log("Facility is not available")
       throw {
         status: "Failed",
         message: "Facility is not available for booking",
@@ -87,6 +85,7 @@ export const createBooking = async (data: CreateBookingParams) => {
     const overlappingBookings = await prisma.booking.count({
       where: {
         facilityId: BigInt(data.facilityId),
+        farmerId: BigInt(data.farmerId),
         active: true,
         startDate: { lt: data.endDate },
         endDate: { gt: data.startDate },
@@ -94,7 +93,6 @@ export const createBooking = async (data: CreateBookingParams) => {
     });
 
     if (overlappingBookings > 0) {
-      console.log("Facility is already booked")
       throw {
         name: "ConflictError",
         message: "Facility already booked for these dates",
@@ -117,7 +115,7 @@ export const createBooking = async (data: CreateBookingParams) => {
         endDate: data.endDate,
         amount,
         paid: false,
-        active: false,
+        active: true,
       },
       include: { facility: true, farmer: true },
     });
@@ -141,7 +139,7 @@ export const updateBooking = async (
   }
 ): Promise<Booking> => {
   return await prisma.booking.update({
-    where: { id },
+    where: { id: Number(id) },
     data: {
       startDate: data.startDate,
       endDate: data.endDate,
@@ -160,7 +158,7 @@ export const updateBooking = async (
 
 export const getBookingById = async (id: bigint): Promise<Booking | null> => {
   return await prisma.booking.findUnique({
-    where: { id },
+    where: { id: Number(id) },
     include: {
       facility: true,
       farmer: true,
@@ -170,7 +168,7 @@ export const getBookingById = async (id: bigint): Promise<Booking | null> => {
 
 export const deleteBooking = async (id: bigint): Promise<void> => {
   await prisma.booking.delete({
-    where: { id },
+    where: { id: Number(id) },
   });
 };
 
@@ -216,8 +214,54 @@ export const getFacilityBookings = async (operatorId: bigint, page: number = 1, 
 
 export const updateBookingStatus = async (id: bigint, status: BookingStatus): Promise<Booking> => {
   return await prisma.booking.update({
-    where: { id },
+    where: { id: Number(id) },
     data: { active: status === BookingStatus.ACTIVE },
+    include: {
+      facility: true,
+      farmer: true,
+    },
+  });
+};
+
+
+export const expireReservation = async (): Promise<void> => {
+ //const expirationTime = new Date(Date.now() - 1 * 60 * 1000); // 1 minute for testing
+  const expirationTime = new Date(Date.now() - 2 * 60 * 60 * 1000); //2hrs
+  const result = await prisma.booking.updateMany({
+    where: {
+      paid: false,
+      active: true,
+      createdAt: {
+        lt: expirationTime,
+      },
+    },
+    data: {
+      active: false,
+      status: "CANCELLED",
+    },
+  });
+
+  console.log(`Expired ${result.count} unpaid bookings older than 2 hours`);
+}
+// approve or reject booking
+export const approveOrRejectBooking = async (
+  bookingId: bigint,
+  approve: boolean
+): Promise<Booking> => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: Number(bookingId) }
+  });
+
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+
+  return prisma.booking.update({
+    where: { id: Number(bookingId) },
+    data: {
+      approved: approve,
+      approvedAt: approve ? new Date() : null,
+    },
     include: {
       facility: true,
       farmer: true,

@@ -3,6 +3,7 @@ import { prisma } from "../../config/config.db";
 import { BadRequestError, BaseError, NotFoundError } from "../../errors/errors";
 import { FacilityFilterOptions, FacilityUpdateData, GetByOperatorOptions} from "../../types/types";
 import { StatusCodes } from "http-status-codes";
+import { cloudinary } from "../../config/config.cloudinary";
 
 export const create = async (data: Prisma.FacilityCreateInput) => {
   try {
@@ -10,8 +11,12 @@ export const create = async (data: Prisma.FacilityCreateInput) => {
       data
     });
     return facility;
-  } catch {
-    throw new BadRequestError({message: `Error creating facility`, from: "addFacility()"}); 
+  } catch(error) {
+    throw new BadRequestError({
+      message: `Error creating facility`, 
+      from: "addFacility()",
+      cause: error
+    }); 
   }
 };
 
@@ -31,28 +36,45 @@ export const get = async (facilityId: bigint) => {
   } catch {
     throw new NotFoundError({message: `Facility with ID ${facilityId} not found`, from: "get()"});
   }
-}
+};
 
 export const update = async (facilityId: bigint, data: FacilityUpdateData) => {
   try {
-  const updateData = { ...data } as unknown as any;
-  if (updateData.type !== undefined) {
-    updateData.type = { set: updateData.type };
-  }
+    const facility = await prisma.facility.findUnique({
+      where: { id: BigInt(facilityId) },
+    });
 
-  const updatedFacility = await prisma.facility.update({
-    where: {
-      id: BigInt(facilityId),
-    },
-    data: updateData,
-  });
+    if (!facility) {
+      throw new NotFoundError({
+        message: `Facility with ID ${facilityId} not found`,
+        from: "update()",
+      });
+    }
 
-  return updatedFacility;
+    const updateData = { ...data } as unknown as any;
+    if (updateData.type !== undefined) {
+      updateData.type = { set: updateData.type };
+    }
 
-  } catch {
-    throw new BadRequestError({message: `Error updating facility with ID ${facilityId}`, from: "update()"});
+    const updatedFacility = await prisma.facility.update({
+      where: {
+        id: BigInt(facilityId),
+      },
+      data: updateData,
+    });
+
+    return updatedFacility;
+
+  } catch (err) {
+    if (err instanceof NotFoundError) throw err;
+    throw new BadRequestError({
+      message: `Error updating facility with ID ${facilityId}`,
+      from: "update()"
+    });
   }
 };
+
+
 
 
 export const getAll = async () => {
@@ -94,10 +116,7 @@ export const getAllFacilities = async (filters: FacilityFilterOptions) => {
     const where: any = {};
 
     if (location) {
-      where.OR = [
-        { location: { contains: location, mode: "insensitive" } },
-        { description: { contains: location, mode: "insensitive" } }
-      ];
+      where.location = { contains: location, mode: "insensitive" }
     }
 
     if (type) where.type = type.toUpperCase();
@@ -130,9 +149,8 @@ export const getAllFacilities = async (filters: FacilityFilterOptions) => {
       filtersApplied: { location, type, available, minPrice, maxPrice }
     };
   } catch (error) {
-    console.log(error);
     throw new BadRequestError({
-      message: 'Error fetching all facilities',
+      message: `Error fetching all facilities: ${JSON.stringify(error)}`,
       from: "getAllFacilities()",
     });
   }
@@ -166,3 +184,82 @@ export const getFacilitiesByOperator = async (options: GetByOperatorOptions) => 
     throw new BaseError("Failed to fetch facilities by operator", StatusCodes.INTERNAL_SERVER_ERROR);
   }
 };
+
+
+export const uploadImageToCloudinary = async(buffer: Buffer, folder: string='facilities'): Promise<string> => {
+  try {
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'image',
+          folder: folder,
+          transformation: [
+            {width: 800, height: 600, crop: 'limit'},
+            { quality: 'auto'}
+          ]
+        },
+        (error, result) => {
+          if(error){
+            reject(new BadRequestError({
+              message: 'Failed to upload image to cloudinary',
+              from: 'uploadImageToCloudinary',
+              cause: error
+            }))
+          }else{
+            resolve(result!.secure_url)
+          }
+        }
+      ).end(buffer)
+    })
+  } catch (error) {
+    throw new BadRequestError({
+      message: 'Error uploading image',
+      from: 'uploadImageToCloudinary()',
+      cause: error
+    })
+  }
+}
+
+
+export const updateFacilityImage = async(facilityId: bigint, facilityImage: string) =>{
+  try {
+    const facility = await prisma.facility.update({
+      where: {id: facilityId},
+      data: {
+        facilityImage: {
+          push: [facilityImage],
+      }
+    }
+    })
+    return facility;
+  } catch (error) {
+    throw new BadRequestError({
+      message: 'Error updating facility image',
+      from: 'updateFacilityImage()',
+      cause: error
+    })
+  }
+}
+
+
+export const deleteImageFromCloudinary = async(imageUrl: string): Promise<void>=>{
+  try {
+    const publicId = imageUrl.split('/').slice(-2).join('/').split('.')[0];
+    const result = await cloudinary.uploader.destroy(publicId);
+    if(result.result !== 'ok'){
+      throw new Error(`Cloudinary deletion failed: ${result.result}`)
+    }
+  } catch (error) {
+    console.error('Error deletion image from cloudinary:', error);
+    throw error
+  }
+}
+
+export const updateFacilityCapacity = async (facilityId: bigint, newCapacity: number) => {
+    const updatedFacility = await prisma.facility.update({
+      where: { id: facilityId },
+      data: { capacity: newCapacity },
+    });
+    return updatedFacility;
+};
+
