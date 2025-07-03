@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import cors from 'cors'
 dotenv.config();
-
 export const config = {
   RENDER_SERVICE_ID: process.env.RENDER_SERVICE_ID || '',
   RENDER_API_KEY: process.env.RENDER_API_KEY || '',
