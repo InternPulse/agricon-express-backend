@@ -196,9 +196,11 @@ export const getAllFacility = async (req: Request, res: Response, next: NextFunc
 
 export const getFacilitiesByOperatorController = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log("params:", req.params);  
     const operatorIdRaw = req.params.operatorId;
 
     let operatorId: bigint;
+    
     try {
       operatorId = BigInt(operatorIdRaw);
     } catch {
@@ -226,7 +228,6 @@ export const getFacilitiesByOperatorController = async (req: Request, res: Respo
    next(err)
   }
 };
-
 
 export const updateCapacityController = async (req: Request, res: Response, next: NextFunction) => {
   const facilityId = BigInt(req.params.facilityId);
