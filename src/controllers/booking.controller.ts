@@ -16,6 +16,8 @@ export const createBookingHandler = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  console.log('create booking handler reached for', req.method, req.originalUrl);
+
   try {
     const bookingData: CreateBookingParams = {
       facilityId: req.body.facilityId,

@@ -25,7 +25,7 @@ const BASE_URL = '/api/v1';
 // Middleware
 
 app.use(generalRateLimiter); // Apply general rate limiter globally
-app.use(express.json());
+// app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(`${BASE_URL}/bookings`, bookingRateLimiter, bookingRoutes); // Booking rate limiter
 app.use(`${BASE_URL}/facilities`, facilityRateLimiter, facilityRoutes); // Facility rate limiter
