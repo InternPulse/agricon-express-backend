@@ -132,22 +132,23 @@ model users_otp {
 }
 
 model users_user {
-  password               String    @db.VarChar(128)
-  last_login             DateTime? @db.Timestamptz(6)
-  id                     String    @id @db.Uuid
-  email                  String    @unique @db.VarChar(254)
-  role                   String    @db.VarChar(10)
+  password               String         @db.VarChar(128)
+  last_login             DateTime?      @db.Timestamptz(6)
+  id                     String         @id @db.Uuid
+  email                  String         @unique @db.VarChar(254)
+  role                   String         @db.VarChar(10)
   is_active              Boolean
   is_staff               Boolean
   is_superuser           Boolean
-  emailVerificationToken String?   @db.Uuid
-  emailTokenExpires      DateTime? @db.Timestamptz(6)
+  emailVerificationToken String?        @db.Uuid
+  emailTokenExpires      DateTime?      @db.Timestamptz(6)
   emailVerified          Boolean
-  passwordResetToken     String?   @db.Uuid
-  passwordTokenExpires   DateTime? @db.Timestamptz(6)
-  createdAt              DateTime  @db.Timestamptz(6)
-  updatedAt              DateTime  @db.Timestamptz(6)
+  passwordResetToken     String?        @db.Uuid
+  passwordTokenExpires   DateTime?      @db.Timestamptz(6)
+  createdAt              DateTime       @db.Timestamptz(6)
+  updatedAt              DateTime       @db.Timestamptz(6)
   is_verified            Boolean
+  Notification           Notification[]
 
   @@index([email], map: "users_user_email_243f6e77_like")
   @@index([role], map: "users_user_role_b76f4c51")
@@ -187,6 +188,7 @@ model Facility {
   updatedAt     DateTime     @updatedAt
   pricePerDay   Float
   facilityImage String[]     @default([])
+  name          String       @db.VarChar(255)
   bookings      Booking[]
   operator      Operator     @relation(fields: [operatorId], references: [id])
 }
@@ -221,6 +223,17 @@ model Transaction {
   updatedAt     DateTime? @updatedAt @db.Timestamp(6)
   ref           String    @unique
   booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_booking")
+}
+
+model Notification {
+  id         Int        @id @default(autoincrement())
+  userId     String     @db.Uuid
+  title      String
+  message    String
+  type       String?    @default("Booking")
+  isRead     Boolean?   @default(false)
+  createdAt  DateTime?  @default(now()) @db.Timestamptz(6)
+  users_user users_user @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
 }
 
 enum FacilityType {
