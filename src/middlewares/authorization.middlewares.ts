@@ -36,18 +36,9 @@ export const isAuthorizedOperator = async (req: Request, res: Response, next: Ne
   next();
 }
 
-export const isAuthorizedToCreateFacility = (req: Request, res: Response, next: NextFunction)=>{
-  if(!req.currentUser || req.currentUser.role !== UserRole.OPERATOR){
-    res.status(403).json({
-      status: "Failed",
-      message: "User must be an operator to create facility",
-      from: "isAuthorizedToCreateFacility Middleware"
-    })
-  }
-  next();
-}
-
 export const isFarmer = (req: Request, res: Response, next: NextFunction) => {
+  console.log('isFarmer reached for', req.method, req.originalUrl);
+
   if(!req.currentUser || req.currentUser.role !== UserRole.FARMER) {
     throw new UnauthorizedError({message: "user must be a registered farmer", from: "isfarmer middleware"})
   }
@@ -61,35 +52,15 @@ export const isFacilityOwner = async (req: Request, _res: Response, next: NextFu
 
     const facility = await prisma.facility.findUnique({
       where: { id: facilityId },
-      include: { operator: true } // Include operator details
+      include: { operator: true }
     })
 
     if (!facility || facility.operator.user_id !== req.currentUser.id) {
       throw new UnauthorizedError({message: "must be the facility owner", from: "isFacilityOwner middleware"})
     }
-    req.facility = facility as unknown as Facility; // Attach facility to request object
+    req.facility = facility as unknown as Facility;
     next();
   } catch {
     throw new UnauthorizedError({message: "must be the facility owner", from: "isFacilityOwner middleware"})
   }
 }
-// export const checkBookingOwnership = async (
-//   req: Request, 
-//   res: Response, 
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const { bookingId } = req.params;
-//     const farmerId = req.currentUser.id;
-//     const booking = mockBookings.find(b => b.id === bookingId);
-//     if (!booking) {
-//       throw new BaseError('Booking not found', 404);
-//     }
-//     if (booking.farmerId !== farmerId) {
-//       throw new BaseError('Unauthorized to access this booking', 403);
-//     }
-//     next();
-//   } catch (error) {
-//     next(error);
-//   }
-// };

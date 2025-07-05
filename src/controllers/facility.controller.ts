@@ -1,122 +1,157 @@
 import { NextFunction, Request, Response } from "express";
-import { create, get, update, deleteFacility, getAllFacilities, getFacilitiesByOperator, updateFacilityCapacity, uploadImageToCloudinary, updateFacilityImage, deleteImageFromCloudinary} from "../services/db/facility.service";
+import {
+  create,
+  get,
+  update,
+  deleteFacility,
+  getAllFacilities,
+  getFacilitiesByOperator,
+  updateFacilityCapacity,
+  uploadImageToCloudinary,
+  deleteImageFromCloudinary,
+} from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
-export const addFacility = async (req: Request, res: Response, next: NextFunction) => {
- try {
-   const facility = await create(req.body);
-    res.status(StatusCodes.CREATED).json({
-    message: "Facility created successfully",
-    data: facility
-  });
- } catch (error) {
-    next(error);
- }
-}
-
-
-export const uploadFacilityImage = async(req: Request, res: Response, next: NextFunction) => {
+export const addFacility = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const {facilityId} = req.params;
-    if(!req.file){
+    const facility = await create(req.body);
+    res.status(StatusCodes.CREATED).json({
+      message: "Facility created successfully",
+      data: facility,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadFacilityImage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { facilityId } = req.params;
+    if (!req.files) {
       throw new BadRequestError({
         message: "No image file provided",
         from: "UploadFacilityImage()",
-      })
+      });
+    }
+  
+
+    let imageUrls: string[] = [];
+
+    if (!Array.isArray(req.files)) {
+      res.status(400).json({
+        success: false,
+        message: "No images uploaded",
+      });
+      return ;
     }
 
-    const facility = await get(BigInt(facilityId));
-    if(!facility){
-      throw new NotFoundError({
-        message: "Facility not found",
-        from: "UploadFacilityImage"
+    imageUrls = await Promise.all(
+      req.files.map(async (file: any) => {
+        const imageUrl = await uploadImageToCloudinary(
+          file.buffer,
+          "facilities"
+        );
+        return imageUrl;
       })
-    }
+    );
 
-    const imageUrl = await uploadImageToCloudinary(req.file.buffer, 'facilities');
-    const updatedFacility = await updateFacilityImage(BigInt(facilityId), imageUrl);
     res.status(200).json({
       success: true,
       message: "Facility Image Uploaded successfully",
       data: {
-        facilityId: updatedFacility.id,
-        imageUrl: updatedFacility.facilityImage
-      }
-    })
+        facilityId: BigInt(facilityId),
+        imageUrls,
+      },
+    });
   } catch (error) {
-    next(error)
+    next(error);
     res.status(403).json({
       status: "Failed",
-      message: "Unable to upload image"
-    })
-    console.log(error)
+      message: "Unable to upload image",
+    });
+    console.log(error);
   }
-}
+};
 
-
-
-export const deleteFacilityImage = async (req: Request, res: Response): Promise<void> => {
+export const deleteFacilityImage = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const {facilityId} = req.params;
-    const { imageUrl} = req.body;
-    await deleteImageFromCloudinary(imageUrl)
+    const { facilityId } = req.params;
+    const { imageUrl } = req.body;
+    await deleteImageFromCloudinary(imageUrl);
 
     const facility = await prisma.facility.findUnique({
-      where: {id: BigInt(facilityId)}
-    })
-    if(!facility) {
-      res.status(404).json({ 
+      where: { id: BigInt(facilityId) },
+    });
+    if (!facility) {
+      res.status(404).json({
         status: "failed",
-        message: 'Facility not found'
+        message: "Facility not found",
       });
-      return 
+      return;
     }
 
-    const updatedImages = facility.facilityImage.filter(img => img !== imageUrl);
+    const updatedImages = facility.facilityImage.filter(
+      (img) => img !== imageUrl
+    );
 
     // Update facility with remaining images
     await prisma.facility.update({
-      where: { id: BigInt(facilityId)},
-      data: { facilityImage: updatedImages}
-    })
-
-     res.status(200).json({
-      status: "Deleted",
-      message: 'Image deleted successfully' 
+      where: { id: BigInt(facilityId) },
+      data: { facilityImage: updatedImages },
     });
 
-    return
+    res.status(200).json({
+      status: "Deleted",
+      message: "Image deleted successfully",
+    });
+
+    return;
   } catch (error: any) {
-     console.error('Error deleting image:', error);
+    console.error("Error deleting image:", error);
     res.status(500).json({
       status: "Failed",
-      message: 'Failed to delete image',
-      error: error.message
+      message: "Failed to delete image",
+      error: error.message,
     });
   }
-}
-
+};
 
 export const getFacility = async (req: Request, res: Response) => {
   try {
     const facilityId = BigInt(req.params.facilityId);
     const facility = await get(facilityId);
-    res.status(StatusCodes.OK).json({message: "Facility fetch successful", facility: facility});  
+    res
+      .status(StatusCodes.OK)
+      .json({ message: "Facility fetch successful", facility: facility });
   } catch {
-     throw new NotFoundError({message: `Facility not found`, from: "getFacility()"});
+    throw new NotFoundError({
+      message: `Facility not found`,
+      from: "getFacility()",
+    });
   }
-}
+};
 
 export const updateFacility = async (req: Request, res: Response) => {
   const facilityId = BigInt(req.params.facilityId);
   const facility = await update(facilityId, req.body);
 
   res.status(StatusCodes.OK).json({
-    message: "Facility update successful", 
-    data: facility
+    message: "Facility update successful",
+    data: facility,
   });
 };
 
@@ -132,8 +167,11 @@ export const updateFacility = async (req: Request, res: Response) => {
 //   }
 // }
 
-
-export const removeFacility = async (req: Request, res: Response, next: NextFunction) => {
+export const removeFacility = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const facilityId = BigInt(req.params.facilityId);
     const deleted = await deleteFacility(facilityId);
@@ -146,38 +184,46 @@ export const removeFacility = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-
-export const getAllFacility = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllFacility = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Number(req.query.limit) || 10, 15);
 
-  const filters: {
-    page: number;
-    limit: number;
-    location?: string;
-    type?: any;
-    minPrice?: number;
-    maxPrice?: number;
-    available?: boolean;
-  } = {
-    page,
-    limit,
-    location: req.query.location as string | undefined,
-    available: req.query.available === undefined ? undefined : req.query.available === "true" ? true : false,
-    type: (req.query.type as string | undefined)?.toUpperCase() as any,
-    minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
-    maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined
-  };
+    const filters: {
+      page: number;
+      limit: number;
+      location?: string;
+      type?: any;
+      minPrice?: number;
+      maxPrice?: number;
+      available?: boolean;
+    } = {
+      page,
+      limit,
+      location: req.query.location as string | undefined,
+      available:
+        req.query.available === undefined
+          ? undefined
+          : req.query.available === "true"
+            ? true
+            : false,
+      type: (req.query.type as string | undefined)?.toUpperCase() as any,
+      minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
+      maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
+    };
 
-  // filters.available = available;
-    
+    // filters.available = available;
+
     // EXTRA VALIdation for type
     const validTypes = ["DRYER", "STORAGE", "PROCESSING", "OTHER"];
     if (filters.type && !validTypes.includes(filters.type)) {
       throw new BadRequestError({
         message: `Invalid type '${filters.type}'. Must be one of ${validTypes.join(", ")}`,
-        from: "getAllFacilitiesController"
+        from: "getAllFacilitiesController",
       });
     }
 
@@ -185,28 +231,30 @@ export const getAllFacility = async (req: Request, res: Response, next: NextFunc
 
     res.status(StatusCodes.OK).json({
       message: "Facilities fetched successfully",
-      ...result
+      ...result,
     });
-
   } catch (err) {
-   next(err)
+    next(err);
   }
 };
 
-
-export const getFacilitiesByOperatorController = async (req: Request, res: Response, next: NextFunction) => {
+export const getFacilitiesByOperatorController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    console.log("params:", req.params);  
+    console.log("params:", req.params);
     const operatorIdRaw = req.params.operatorId;
 
     let operatorId: bigint;
-    
+
     try {
       operatorId = BigInt(operatorIdRaw);
     } catch {
       throw new BadRequestError({
         message: "Invalid operator ID",
-        from: "getFacilitiesByOperatorController"
+        from: "getFacilitiesByOperatorController",
       });
     }
 
@@ -216,40 +264,45 @@ export const getFacilitiesByOperatorController = async (req: Request, res: Respo
     const result = await getFacilitiesByOperator({
       operatorId,
       page,
-      limit
+      limit,
     });
 
     res.status(StatusCodes.OK).json({
       message: "Facilities fetched successfully",
-      ...result
+      ...result,
     });
-
   } catch (err) {
-   next(err)
+    next(err);
   }
 };
 
-export const updateCapacityController = async (req: Request, res: Response, next: NextFunction) => {
+export const updateCapacityController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const facilityId = BigInt(req.params.facilityId);
   const { capacity } = req.body;
-  const parsedCapacity = parseInt(capacity, 10)
+  const parsedCapacity = parseInt(capacity, 10);
 
   if (!parsedCapacity || isNaN(parsedCapacity) || parsedCapacity < 0) {
-    res.status(StatusCodes.BAD_REQUEST).json({ 
-      message: "Capacity must be a positive number"
+    res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Capacity must be a positive number",
     });
     return;
   }
   try {
-    const updatedFacility = await updateFacilityCapacity(facilityId, parsedCapacity);
-    res.status(StatusCodes.OK).json({ 
-      message: 'Capacity updated successfully', 
-      data: updatedFacility
+    const updatedFacility = await updateFacilityCapacity(
+      facilityId,
+      parsedCapacity
+    );
+    res.status(StatusCodes.OK).json({
+      message: "Capacity updated successfully",
+      data: updatedFacility,
     });
     return;
-    
   } catch (error) {
-    next(error)
+    next(error);
     return;
   }
 };

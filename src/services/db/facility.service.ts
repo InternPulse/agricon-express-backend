@@ -19,7 +19,7 @@ export const create = async (data: Prisma.FacilityCreateInput) => {
     }); 
   }
 };
-
+ 
 export const get = async (facilityId: bigint) => {
   try {
     const facility = await prisma.facility.findUnique({
