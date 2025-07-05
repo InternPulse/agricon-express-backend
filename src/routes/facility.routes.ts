@@ -2,7 +2,7 @@ import express from 'express';
 import { facilityValidator } from '../utils/validateFacility';
 import { verifyAuth } from '../middlewares/authenticate.middleware';
 import { isAuthorizedToCreateFacility, isFacilityOwner } from '../middlewares/authorization.middlewares';
-import {  addFacility,getFacility, updateFacility, getAllFacility, removeFacility,updateFacilityCapacity ,  uploadFacilityImage, deleteFacilityImage } from '../controllers/facility.controller';
+import {  addFacility,getFacility, updateFacility, getAllFacility, removeFacility, updateCapacityController ,  uploadFacilityImage, deleteFacilityImage } from '../controllers/facility.controller';
 import { upload } from '../config/config.cloudinary';
 
 const router = express.Router();
@@ -15,6 +15,6 @@ router.get('/:facilityId', verifyAuth,  getFacility);
 router.put('/:facilityId', verifyAuth, isFacilityOwner, updateFacility);
 router.delete('/:facilityId', verifyAuth, isFacilityOwner, removeFacility);
 router.delete('/:facilityId/image', verifyAuth, isFacilityOwner, deleteFacilityImage)
-router.get('/capacity', verifyAuth, updateFacilityCapacity);
+router.patch('/capacity/:facilityId', verifyAuth, updateCapacityController);
 
 export default router;

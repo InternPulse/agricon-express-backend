@@ -116,10 +116,7 @@ export const getAllFacilities = async (filters: FacilityFilterOptions) => {
     const where: any = {};
 
     if (location) {
-      where.OR = [
-        { location: { contains: location, mode: "insensitive" } },
-        { address: { contains: location, mode: "insensitive" } }
-      ];
+      where.location = { contains: location, mode: "insensitive" }
     }
 
     if (type) where.type = type.toUpperCase();
@@ -152,9 +149,8 @@ export const getAllFacilities = async (filters: FacilityFilterOptions) => {
       filtersApplied: { location, type, available, minPrice, maxPrice }
     };
   } catch (error) {
-    console.log(error);
     throw new BadRequestError({
-      message: 'Error fetching all facilities',
+      message: `Error fetching all facilities: ${JSON.stringify(error)}`,
       from: "getAllFacilities()",
     });
   }
@@ -259,30 +255,11 @@ export const deleteImageFromCloudinary = async(imageUrl: string): Promise<void>=
   }
 }
 
-export const updateAvailableFacility = async (facilityId: bigint ) => {
-//Counts confirmed booking for the facility  
-  const confirmedBookingsCount = await prisma.booking.count({
-    where: {
-      facilityId: facilityId,
-      active: true,
-    },
-  });
-
-// Fetch total capacity from facility
-  const facilityCapacity = await prisma.facility.findUnique({
-    where: { id: facilityId },
-    select: { capacity: true },
-  });
-
-  if (!facilityCapacity) {
-    throw new Error(`Facility with ID ${facilityId} not found.`);
-  };
-
-//Update Facility with available facility
-  const newAvailableCapacity = facilityCapacity.capacity - confirmedBookingsCount;
-
-  await prisma.facility.update({
-    where: { id: facilityId },
-    data: { capacity: newAvailableCapacity },
-  });
+export const updateFacilityCapacity = async (facilityId: bigint, newCapacity: number) => {
+    const updatedFacility = await prisma.facility.update({
+      where: { id: facilityId },
+      data: { capacity: newCapacity },
+    });
+    return updatedFacility;
 };
+

@@ -104,7 +104,7 @@ export enum BookingStatus{
   ACTIVE,
   INACTIVE,
   PENDING,
-  CANCELED,
+  CANCELLED,
   COMPLETED,
 }
 
