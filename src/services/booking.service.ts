@@ -107,30 +107,18 @@ export const createBooking = async (data: CreateBookingParams) => {
         data.endDate
       );
 
-    // return prisma.booking.create({
-    //   data: {
-    //     facility: { connect: { id: BigInt(data.facilityId) } },
-    //     farmer: { connect: { id: BigInt(data.farmerId) } },
-    //     startDate: data.startDate,
-    //     endDate: data.endDate,
-    //     amount,
-    //     paid: false,
-    //     active: true,
-    //   },
-    //   include: { facility: true, farmer: true },
-    // });
     return prisma.booking.create({
-  data: {
-    facilityId: BigInt(data.facilityId),
-    farmerId: BigInt(data.farmerId),
-    startDate: data.startDate,
-    endDate: data.endDate,
-    amount,
-    paid: false,
-    active: true,
-  },
-  include: { facility: true, farmer: true },
-});
+      data: {
+        facility: { connect: { id: BigInt(data.facilityId) } },
+        farmer: { connect: { id: BigInt(data.farmerId) } },
+        startDate: data.startDate,
+        endDate: data.endDate,
+        amount,
+        paid: false,
+        active: true,
+      },
+      include: { facility: true, farmer: true },
+    });
   } catch (error) {
     console.log("Failed to create booking", error);
     throw error;
