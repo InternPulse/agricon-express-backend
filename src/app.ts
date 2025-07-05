@@ -37,6 +37,12 @@ app.get(`${BASE_URL}/health`, healthCheckRateLimiter, healthCheck); // Health ch
 app.use((error: IErrorResponse, _req: Request, res: Response, next: NextFunction) => {
   if (error instanceof BaseError) {
     res.status(error.statusCode).json(error.toJSON());
+  }else if(error ){
+    res.status(500).json({
+      status: 'error',
+      message: 'Internal Server Error',
+      error: error.message || 'An unexpected error occurred'
+    });
   }
   next();
 });
