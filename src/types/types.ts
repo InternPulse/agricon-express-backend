@@ -9,6 +9,7 @@ export enum FacilityType {
   DRYER,
   STORAGE,
   PROCESSING,
+  COLDROOM,
   OTHERS,
 }
 
