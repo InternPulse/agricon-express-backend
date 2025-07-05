@@ -196,9 +196,11 @@ export const getAllFacility = async (req: Request, res: Response, next: NextFunc
 
 export const getFacilitiesByOperatorController = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log("params:", req.params);  
     const operatorIdRaw = req.params.operatorId;
 
     let operatorId: bigint;
+    
     try {
       operatorId = BigInt(operatorIdRaw);
     } catch {
@@ -226,6 +228,71 @@ export const getFacilitiesByOperatorController = async (req: Request, res: Respo
    next(err)
   }
 };
+
+
+// export const getFacilitiesByOperatorController = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     /* ───── 1️⃣  RAW PARAMS ───── */
+//     console.log("▶ params:", req.params);       // ← should be { operatorId: '2' }
+
+//     const operatorIdRaw = req.params.operatorId;
+
+//     /* ───── 2️⃣  GUARD + PARSE ───── */
+//     let operatorId: bigint;
+//     try {
+//       operatorId = BigInt(operatorIdRaw);       // fails if param missing or non‑numeric
+//     } catch {
+//       console.log("✖ Bad operatorId:", operatorIdRaw);
+//       throw new BadRequestError({
+//         message: "Invalid operator ID",
+//         from: "getFacilitiesByOperatorController",
+//       });
+//     }
+//     console.log("✓ Parsed operatorId:", operatorId);
+
+//     /* ───── 3️⃣  PAGINATION DEBUG ───── */
+//     const page  = Math.max(Number(req.query.page)  || 1, 1);
+//     const limit = Math.min(Number(req.query.limit) || 10, 100);
+//     console.log(`✓ Pagination → page=${page}, limit=${limit}`);
+
+//     /* ───── 4️⃣  OPTIONAL EXISTENCE CHECK ─────
+//        (Remove if your service already handles it) */
+//     const operatorExists = await prisma.operator.findUnique({
+//       where: { id: operatorId },
+//       select: { id: true },
+//     });
+//     console.log("✓ Operator exists?", !!operatorExists);
+
+//     if (!operatorExists) {
+//       throw new BadRequestError({
+//         message: "Invalid operator ID (not found in DB)",
+//         from: "getFacilitiesByOperatorController",
+//       });
+//     }
+
+//     /* ───── 5️⃣  MAIN SERVICE CALL ───── */
+//     const result = await getFacilitiesByOperator({
+//       operatorId,
+//       page,
+//       limit,
+//     });
+//     console.log("✓ Facilities fetched:", result.facilities?.length ?? 0);
+
+//     /* ───── 6️⃣  RESPONSE ───── */
+//     res.status(StatusCodes.OK).json({
+//       message: "Facilities fetched successfully",
+//       ...result,
+//     });
+//   } catch (err) {
+//     /* Any unexpected error bubbles here */
+//     console.error("✖ Controller error:", err);
+//     next(err);
+//   }
+// };
 
 
 export const updateCapacityController = async (req: Request, res: Response, next: NextFunction) => {
