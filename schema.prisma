@@ -203,7 +203,7 @@ model Booking {
   startDate    DateTime
   endDate      DateTime
   createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  updatedAt    DateTime?       @updatedAt
   status       booking_status? @default(RESERVED)
   approved     Boolean?        @default(false)
   approvedAt   DateTime?       @db.Timestamp(6)
@@ -240,7 +240,6 @@ enum FacilityType {
   DRYER
   STORAGE
   PROCESSING
-  COLDROOM
   OTHER
 }
 
