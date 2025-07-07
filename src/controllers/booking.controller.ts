@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { BaseError } from "../errors/errors";
+import { BadRequestError, BaseError, NotFoundError } from "../errors/errors";
 import {
   createBooking,
   deleteBooking,
@@ -11,13 +11,13 @@ import {
 } from "../services/booking.service";
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import { StatusCodes } from "http-status-codes";
+import { createNotification } from "../services/db/notification.service";
+import { prisma } from "../config/config.db";
 
 export const createBookingHandler = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  console.log('create booking handler reached for', req.method, req.originalUrl);
-
   try {
     const bookingData: CreateBookingParams = {
       facilityId: req.body.facilityId,
@@ -28,17 +28,19 @@ export const createBookingHandler = async (
     };
 
     const booking = await createBooking(bookingData);
-
+    if (booking) {
+      await createNotification({userId: req.currentUser.id, title: "Booking Notification", message: `Your Booking with ID: ${booking.id} was reserved successfully` })
+    }
     res.status(StatusCodes.CREATED).json({
       success: true,
       message: "Booking created successfully",
       data: booking,
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-       message: error.errors[0].message || String(error),
-    })
+    throw new BadRequestError({
+      message: error.message,
+      from: "createBookingController()",
+    });
   }
 };
 
@@ -49,6 +51,7 @@ export const deleteBookingHandler = async (
   try {
     const { bookingId } = req.params;
     await deleteBooking(BigInt(bookingId));
+    await createNotification({userId: req.currentUser.id, title: "Booking Notification", message: `Your Booking with ID: ${bookingId} was deleted successfully` })
 
     res.status(204).send();
   } catch (error) {
@@ -68,18 +71,14 @@ export const listFarmerBookings = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  console.log("Famer Booking hit");
   try {
     // const farmerId = BigInt(req.currentUser.id);
-    const farmerId = req.currentUser.id;
+    const userId = req.currentUser.id;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    console.log("FamerId", farmerId);
-    console.log("page", page);
-    console.log("FamerId", limit);
 
-    const farmerBookings = await getFarmerBookings(farmerId, page, limit);
-    console.log(farmerBookings);
+    const farmerBookings = await getFarmerBookings(userId, page, limit);
+
     res.status(200).json({
       success: true,
       data: farmerBookings,
@@ -103,17 +102,22 @@ export const listFacilityBookings = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  console.log("Operator Bookings hit");
   try {
-    const operatorId = BigInt(req.currentUser.id);
+    const operator = await prisma.operator.findUnique({
+        where: { user_id: req.currentUser.id },
+      });
+
+    if (!operator) {
+      throw new NotFoundError({
+        message: "Operator not found",
+        from: "listFacilityBookings()"
+      })
+    }
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    console.log("FamerId", operatorId);
-    console.log("page", page);
-    console.log("FamerId", limit);
 
-    const bookings = await getFacilityBookings(BigInt(operatorId), page, limit);
-    console.log(bookings);
+    const bookings = await getFacilityBookings(BigInt(operator.id), page, limit);
+  
 
     res.status(200).json({
       status: "success",
@@ -179,6 +183,11 @@ export const expireBooking = async (
       BookingStatus.INACTIVE
     );
 
+     await createNotification({ userId: req.currentUser.id, 
+        title: "Booking Notification", 
+        message: `Your Booking with ID: ${booking.id} is expired`, 
+      });
+
     res.status(200).json({
       status: "success",
       data: booking,
@@ -204,6 +213,10 @@ export const approveOrRejectBookingHandler = async (
     }
 
     const updatedBooking = await approveOrRejectBooking(BigInt(bookingId), approve);
+    await createNotification({ userId: req.currentUser.id, 
+        title: "Booking Notification", 
+        message: `Booking with ID ${bookingId} was ${approve ? "approved" : "rejected"} successfully`, 
+      });
 
     res.status(200).json({
       success: true,

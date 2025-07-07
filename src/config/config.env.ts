@@ -15,7 +15,8 @@ export const configCors = ()=> {
         origin: (origin, callback) => {
             const allowedOrigins = [
                 process.env.FRONTEND_PORT1 || "http://localhost:3001",
-                process.env.FRONTEND_PORT2 || "http://localhost:5173"
+                process.env.FRONTEND_PORT2 || "http://localhost:5173",
+                process.env.FRONTEND_DEPLOYED || "https://agricon-ng.vercel.app"
             ]
             if(!origin || allowedOrigins.includes(origin)){
                 callback(null, true);

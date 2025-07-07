@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import bookingRoutes from './routes/booking.routes';
 import facilityRoutes from './routes/facility.routes';
+import notificationRoutes from './routes/notification.routes';
 import { BaseError, IErrorResponse } from './errors/errors';
 import { healthCheck, test_db } from './test_database.ts/test_db';
 import {
@@ -25,10 +26,10 @@ const BASE_URL = '/api/v1';
 // Middleware
 
 app.use(generalRateLimiter); // Apply general rate limiter globally
-// app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(`${BASE_URL}/bookings`, bookingRateLimiter, bookingRoutes); // Booking rate limiter
-app.use(`${BASE_URL}/facilities`, facilityRateLimiter, facilityRoutes); // Facility rate limiter
+app.use(`${BASE_URL}/bookings`, bookingRateLimiter, bookingRoutes);
+app.use(`${BASE_URL}/facilities`, facilityRateLimiter, facilityRoutes);
+app.use(`${BASE_URL}/notifications`, notificationRoutes);
 
 //endpoints to test db connection
 app.post(`${BASE_URL}/init-db`, databaseRateLimiter, test_db); // DB rate limiter
