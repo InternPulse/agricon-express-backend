@@ -1,3 +1,4 @@
+import { BadRequestError, NotFoundError } from "../errors/errors";
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import {
   PrismaClient,
@@ -59,108 +60,32 @@ const calculateBookingAmount = (
   return costPerDay * days;
 };
 
-// export const createBooking = async (data: CreateBookingParams) => {
-//   validateBookingRequest(data);
-//   try {
-//     const facility = await prisma.facility.findUnique({
-//       where: { id: BigInt(data.facilityId) },
-//     });
-
-//     if (!facility) {
-//       throw { status: "Failed", message: "Facility not found" };
-//     }
-//     if (!facility.available) {
-//       throw {
-//         status: "Failed",
-//         message: "Facility is not available for booking",
-//       };
-//     }
-
-//     const farmer = await prisma.farmer.findUnique({
-//       where: { id: BigInt(data.farmerId) },
-//     });
-
-//     if (!farmer) {
-//       throw { name: "NotFoundError", message: "Farmer not found" };
-//     }
-
-//     const overlappingBookings = await prisma.booking.count({
-//       where: {
-//         facilityId: BigInt(data.facilityId),
-//         farmerId: BigInt(data.farmerId),
-//         active: true,
-//         startDate: { lt: data.endDate },
-//         endDate: { gt: data.startDate },
-//       },
-//     });
-
-//     if (overlappingBookings > 0) {
-//       throw {
-//         name: "ConflictError",
-//         message: "Facility already booked for these dates",
-//       };
-//     }
-
-//     const amount =
-//       data.amount ??
-//       calculateBookingAmount(
-//         facility.pricePerDay,
-//         data.startDate,
-//         data.endDate
-//       );
-
-//       return await prisma.booking.create(
-//         data
-//       )
-
-//     // return prisma.booking.create({
-//     //   data: {
-//     //     facilityId: BigInt(data.facilityId),
-//     //     farmerId: BigInt(data.farmerId),
-//     //     startDate: data.startDate,
-//     //     endDate: data.endDate,
-//     //     amount,
-//     //     paid: false,
-//     //     active: true,
-//     //   },
-//     // });
-//   } catch (error) {
-//     console.log("Failed to create booking", error);
-//     // throw error;
-//   }
-// };
-
-// Update booking
-
 export const createBooking = async (data: CreateBookingParams) => {
   validateBookingRequest(data);
   try {
     const facility = await prisma.facility.findUnique({
-      where: { id: BigInt(data.facilityId) },
+      where: { id: data.facilityId },
     });
 
     if (!facility) {
-      throw { status: "Failed", message: "Facility not found" };
+      throw new BadRequestError({message: "Facility not found", from: "Failed"});
     }
     if (!facility.available) {
-      throw {
-        status: "Failed",
-        message: "Facility is not available for booking",
-      };
+      throw new BadRequestError({message: "Facility availability not found", from: "Failed"});
     }
 
     const farmer = await prisma.farmer.findUnique({
-      where: { id: BigInt(data.farmerId) },
+      where: { id: (data.farmerId) },
     });
 
     if (!farmer) {
-      throw { name: "NotFoundError", message: "Farmer not found" };
+      throw new NotFoundError({message: "Farmer not found", from: "Failed"});
     }
 
     const overlappingBookings = await prisma.booking.count({
       where: {
-        facilityId: BigInt(data.facilityId),
-        farmerId: BigInt(data.farmerId),
+        facilityId: data.facilityId,
+        farmerId: data.farmerId,
         active: true,
         startDate: { lt: data.endDate },
         endDate: { gt: data.startDate },
@@ -168,10 +93,10 @@ export const createBooking = async (data: CreateBookingParams) => {
     });
 
     if (overlappingBookings > 0) {
-      throw {
-        name: "ConflictError",
+      throw new BadRequestError({
         message: "Facility already booked for these dates",
-      };
+        from: "Failed"
+      });
     }
 
     const amount =
@@ -183,19 +108,21 @@ export const createBooking = async (data: CreateBookingParams) => {
       );
 
     const bookingData = {
-      farmerId: data.farmerId,
+      farmerId:data.farmerId,
       facilityId: data.facilityId,
       startDate: data.startDate,
       endDate: data.endDate,
-      amount,
+      amount
     };
 
     return await prisma.booking.create({
       data: bookingData,
     });
-  } catch (error) {
-    console.log("Failed to create booking", error);
-    throw error;
+  } catch (error: any) {
+    throw new BadRequestError({
+      message: error,
+      from: "createBookingService"
+    });
   }
 };
 

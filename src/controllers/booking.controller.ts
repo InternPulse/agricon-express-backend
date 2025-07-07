@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { BaseError } from "../errors/errors";
+import { BadRequestError, BaseError, NotFoundError } from "../errors/errors";
 import {
   createBooking,
   deleteBooking,
@@ -12,6 +12,7 @@ import {
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import { StatusCodes } from "http-status-codes";
 import { createNotification } from "../services/db/notification.service";
+import { prisma } from "../config/config.db";
 
 export const createBookingHandler = async (
   req: Request,
@@ -27,17 +28,19 @@ export const createBookingHandler = async (
     };
 
     const booking = await createBooking(bookingData);
-    await createNotification({userId: req.currentUser.id, title: "Booking Notification", message: `Your Booking with ID: ${booking.id} was reserved successfully` })
+    if (booking) {
+      await createNotification({userId: req.currentUser.id, title: "Booking Notification", message: `Your Booking with ID: ${booking.id} was reserved successfully` })
+    }
     res.status(StatusCodes.CREATED).json({
       success: true,
       message: "Booking created successfully",
       data: booking,
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-       message: error.errors[0].message || String(error),
-    })
+    throw new BadRequestError({
+      message: error.message,
+      from: "createBookingController()",
+    });
   }
 };
 
@@ -70,11 +73,11 @@ export const listFarmerBookings = async (
 ): Promise<void> => {
   try {
     // const farmerId = BigInt(req.currentUser.id);
-    const farmerId = req.currentUser.id;
+    const userId = req.currentUser.id;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const farmerBookings = await getFarmerBookings(farmerId, page, limit);
+    const farmerBookings = await getFarmerBookings(userId, page, limit);
 
     res.status(200).json({
       success: true,
@@ -100,11 +103,21 @@ export const listFacilityBookings = async (
   res: Response
 ): Promise<void> => {
   try {
-    const operatorId = BigInt(req.currentUser.id);
+    const operator = await prisma.operator.findUnique({
+        where: { user_id: req.currentUser.id },
+      });
+
+    if (!operator) {
+      throw new NotFoundError({
+        message: "Operator not found",
+        from: "listFacilityBookings()"
+      })
+    }
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const bookings = await getFacilityBookings(BigInt(operatorId), page, limit);
+    const bookings = await getFacilityBookings(BigInt(operator.id), page, limit);
+  
 
     res.status(200).json({
       status: "success",
