@@ -240,7 +240,6 @@ enum FacilityType {
   DRYER
   STORAGE
   PROCESSING
-  COLDROOM
   OTHER
 }
 
