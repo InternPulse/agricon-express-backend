@@ -199,7 +199,7 @@ model Booking {
   farmerId     BigInt
   amount       Float
   paid         Boolean         @default(false)
-  active       Boolean         @default(false)
+  active       Boolean         @default(true)
   startDate    DateTime
   endDate      DateTime
   createdAt    DateTime        @default(now())
@@ -240,6 +240,7 @@ enum FacilityType {
   DRYER
   STORAGE
   PROCESSING
+  COLDROOM
   OTHER
 }
 

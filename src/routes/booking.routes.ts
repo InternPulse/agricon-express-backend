@@ -11,7 +11,7 @@ const router = express.Router();
 
 
 router.get('/farmer/me', verifyAuth, isFarmer, listFarmerBookings);
-router.get('/operator/me', verifyAuth, isFacilityOwner, listFacilityBookings);
+router.get('/operator/me', verifyAuth, listFacilityBookings);
 router.post('/', verifyAuth, isFarmer, createBookingHandler)
 router.get('/:bookingId', verifyAuth, validateBookingId, fetchBooking);
 router.patch('/:bookingId', verifyAuth, validateBookingId, preventDateUpdateIfPaid, updateBookingHandler);
