@@ -38,7 +38,7 @@ export const createBookingHandler = async (
     });
   } catch (error: any) {
     throw new BadRequestError({
-      message: error.message,
+      message: (error?.errors && error?.errors[0]?.message) || error.message,
       from: "createBookingController()",
     });
   }

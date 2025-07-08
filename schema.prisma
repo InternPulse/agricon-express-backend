@@ -240,8 +240,8 @@ enum FacilityType {
   DRYER
   STORAGE
   PROCESSING
-  COLDROOM
   OTHER
+  COLDROOM
 }
 
 enum booking_status {
