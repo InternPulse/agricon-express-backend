@@ -241,6 +241,7 @@ enum FacilityType {
   STORAGE
   PROCESSING
   OTHER
+  COLDROOM
 }
 
 enum booking_status {
