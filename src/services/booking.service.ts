@@ -40,7 +40,7 @@ const validateBookingRequest = (data: CreateBookingParams) => {
   }
 
   if (errors.length > 0) {
-    throw {
+    throw  {
       name: "ValidationError",
       message: "Booking validation failed",
       errors,
@@ -95,7 +95,7 @@ export const createBooking = async (data: CreateBookingParams) => {
     if (overlappingBookings > 0) {
       throw new BadRequestError({
         message: "Facility already booked for these dates",
-        from: "Failed"
+        from: "overlappingBookings check"
       });
     }
 
@@ -108,7 +108,7 @@ export const createBooking = async (data: CreateBookingParams) => {
       );
 
     const bookingData = {
-      farmerId:data.farmerId,
+      farmerId: data.farmerId,
       facilityId: data.facilityId,
       startDate: data.startDate,
       endDate: data.endDate,
@@ -116,11 +116,11 @@ export const createBooking = async (data: CreateBookingParams) => {
     };
 
     return await prisma.booking.create({
-      data: bookingData,
+      data: bookingData
     });
   } catch (error: any) {
     throw new BadRequestError({
-      message: error,
+      message: error?.errors || error?.message || "Failed to create booking",
       from: "createBookingService"
     });
   }

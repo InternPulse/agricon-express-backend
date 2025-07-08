@@ -42,7 +42,7 @@ app.use((error: IErrorResponse, _req: Request, res: Response, next: NextFunction
     res.status(500).json({
       status: 'error',
       message: 'Internal Server Error',
-      error: error.message || 'An unexpected error occurred'
+      error: error?.message || 'An unexpected error occurred'
     });
   }
   next();
