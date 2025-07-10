@@ -8,7 +8,7 @@ import {
   getFarmerBookings,
   updateBookingStatus,
   approveOrRejectBooking,
-} from "../services/booking.service";
+} from "../services/db/booking.service";
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import { StatusCodes } from "http-status-codes";
 import { createNotification } from "../services/db/notification.service";
@@ -16,7 +16,8 @@ import { prisma } from "../config/config.db";
 
 export const createBookingHandler = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const bookingData: CreateBookingParams = {
@@ -36,11 +37,8 @@ export const createBookingHandler = async (
       message: "Booking created successfully",
       data: booking,
     });
-  } catch (error: any) {
-    throw new BadRequestError({
-      message: error.message,
-      from: "createBookingController()",
-    });
+  } catch (error) {
+    next(error);
   }
 };
 

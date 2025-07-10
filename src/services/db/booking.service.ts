@@ -1,5 +1,5 @@
-import { BadRequestError, NotFoundError } from "../errors/errors";
-import { BookingStatus, CreateBookingParams } from "../types/types";
+import { BadRequestError, NotFoundError } from "../../errors/errors";
+import { BookingStatus, CreateBookingParams } from "../../types/types";
 import {
   PrismaClient,
   Booking as PrismaBooking,
@@ -94,9 +94,9 @@ export const createBooking = async (data: CreateBookingParams) => {
 
     if (overlappingBookings > 0) {
       throw new BadRequestError({
-        message: "Facility already booked for these dates",
-        from: "Failed"
-      });
+      message: 'Facility already booked for this date',
+      from: "createBookingService()",
+    });
     }
 
     const amount =
@@ -118,10 +118,11 @@ export const createBooking = async (data: CreateBookingParams) => {
     return await prisma.booking.create({
       data: bookingData,
     });
-  } catch (error: any) {
+  } catch (error) {
     throw new BadRequestError({
-      message: error,
-      from: "createBookingService"
+      message: 'Error creating booking',
+      from: "createBookingService",
+      cause: error
     });
   }
 };

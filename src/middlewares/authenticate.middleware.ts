@@ -54,10 +54,12 @@ export const verifyAuth = async (
     next();
 
   } catch(error) {
-    console.log(error)
+    console.log(error);
+    
      throw new BadRequestError({
       message: `JWT auth error`,
-      from: "authenticateJWT()"
+      from: "authenticateJWT()",
+      cause: error
     });
   }
 }
@@ -66,12 +68,11 @@ export const verifyAuth = async (
 export const authorizeRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!roles.includes(req.currentUser.role)) {
-      res.status(403).json({
-        status: "Failed",
-        message: "Unauthorized"
-      });
-      return;
-    }
+      throw new BadRequestError({
+      message: `Failed`,
+      from: "authorizeRole()"
+    });
+  }
     next();
   };
 };

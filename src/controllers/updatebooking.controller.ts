@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { BaseError } from '../errors/errors';
 import { prisma } from '../config/config.db';
-import { updateBooking } from '../services/booking.service';
+import { updateBooking } from '../services/db/booking.service';
 
 export interface UpdateBookingRequest {
   startDate?: Date;

@@ -120,6 +120,3 @@ export const databaseRateLimiter = rateLimit({
     });
   }
 });
-
-// Ensure this file is a module
-export default {}; 

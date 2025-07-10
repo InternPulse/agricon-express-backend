@@ -1,18 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import {
-  create,
-  get,
-  update,
-  deleteFacility,
+  createFacility,
+  getFacilityById,
+  updateFacilityById,
+  deleteFacilityById,
   getAllFacilities,
   getFacilitiesByOperator,
   updateFacilityCapacity,
-  uploadImageToCloudinary,
-  deleteImageFromCloudinary,
 } from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
+import { deleteImageFromCloudinary, uploadImageToCloudinary } from "../services/cloudinary.service";
 const prisma = new PrismaClient();
 
 export const addFacility = async (
@@ -21,7 +20,7 @@ export const addFacility = async (
   next: NextFunction
 ) => {
   try {
-    const facility = await create(req.body);
+    const facility = await createFacility(req.body);
     res.status(StatusCodes.CREATED).json({
       message: "Facility created successfully",
       data: facility,
@@ -31,62 +30,10 @@ export const addFacility = async (
   }
 };
 
-export const uploadFacilityImage = async (
+export const deleteFacilityImage = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
-  try {
-    const { facilityId } = req.params;
-    if (!req.files) {
-      throw new BadRequestError({
-        message: "No image file provided",
-        from: "UploadFacilityImage()",
-      });
-    }
-  
-
-    let imageUrls: string[] = [];
-
-    if (!Array.isArray(req.files)) {
-      res.status(400).json({
-        success: false,
-        message: "No images uploaded",
-      });
-      return ;
-    }
-
-    imageUrls = await Promise.all(
-      req.files.map(async (file: any) => {
-        const imageUrl = await uploadImageToCloudinary(
-          file.buffer,
-          "facilities"
-        );
-        return imageUrl;
-      })
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "Facility Image Uploaded successfully",
-      data: {
-        facilityId: BigInt(facilityId),
-        imageUrls,
-      },
-    });
-  } catch (error) {
-    next(error);
-    res.status(403).json({
-      status: "Failed",
-      message: "Unable to upload image",
-    });
-    console.log(error);
-  }
-};
-
-export const deleteFacilityImage = async (
-  req: Request,
-  res: Response
 ): Promise<void> => {
   try {
     const { facilityId } = req.params;
@@ -97,11 +44,11 @@ export const deleteFacilityImage = async (
       where: { id: BigInt(facilityId) },
     });
     if (!facility) {
-      res.status(404).json({
-        status: "failed",
-        message: "Facility not found",
+      throw new NotFoundError({
+        message: 'Error deleting facility image',
+        from: 'deleteFacilityImage()',
+        cause: 'Facility not found'
       });
-      return;
     }
 
     const updatedImages = facility.facilityImage.filter(
@@ -118,63 +65,49 @@ export const deleteFacilityImage = async (
       status: "Deleted",
       message: "Image deleted successfully",
     });
-
     return;
-  } catch (error: any) {
-    console.error("Error deleting image:", error);
-    res.status(500).json({
-      status: "Failed",
-      message: "Failed to delete image",
-      error: error.message,
-    });
+
+  } catch (error) {
+    next(error);
   }
 };
 
-export const getFacility = async (req: Request, res: Response) => {
+export const getFacility = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const facilityId = BigInt(req.params.facilityId);
-    const facility = await get(facilityId);
-    res
-      .status(StatusCodes.OK)
-      .json({ message: "Facility fetch successful", facility: facility });
-  } catch {
-    throw new NotFoundError({
-      message: `Facility not found`,
-      from: "getFacility()",
+    const facility = await getFacilityById(facilityId);
+    res.status(StatusCodes.OK).json({ 
+      message: "Facility fetch successful", 
+      facility: facility
     });
+
+  } catch(error) {
+    next(error);
   }
 };
 
-export const updateFacility = async (req: Request, res: Response) => {
+export const updateFacility = async (req: Request, res: Response, next: NextFunction) => {
   const facilityId = BigInt(req.params.facilityId);
-  const facility = await update(facilityId, req.body);
-
-  res.status(StatusCodes.OK).json({
+  try {
+    const facility = await updateFacilityById(facilityId, req.body);
+    res.status(StatusCodes.OK).json({
     message: "Facility update successful",
     data: facility,
   });
+  return;
+  } catch (error) {
+    next(error);
+  }
 };
 
-// export const getAllFacility = async (req: Request, res: Response, next:NextFunction) => {
-//   try {
-//     const facilities = await getAll();
-//     res.status(StatusCodes.OK).json({
-//     success:true,
-//     message: "Facility(s) fetch successful",
-//     data: facilities});
-//   } catch (error) {
-//     next(error);
-//   }
-// }
-
-export const removeFacility = async (
+export const deleteFacility = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const facilityId = BigInt(req.params.facilityId);
-    const deleted = await deleteFacility(facilityId);
+    const deleted = await deleteFacilityById(facilityId);
     res.status(StatusCodes.OK).json({
       message: "Facility deleted successfully",
       data: deleted,
@@ -223,7 +156,7 @@ export const getAllFacility = async (
     if (filters.type && !validTypes.includes(filters.type)) {
       throw new BadRequestError({
         message: `Invalid type '${filters.type}'. Must be one of ${validTypes.join(", ")}`,
-        from: "getAllFacilitiesController",
+        from: "getAllFacility",
       });
     }
 
@@ -233,8 +166,8 @@ export const getAllFacility = async (
       message: "Facilities fetched successfully",
       ...result,
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -271,12 +204,12 @@ export const getFacilitiesByOperatorController = async (
       message: "Facilities fetched successfully",
       ...result,
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 };
 
-export const updateCapacityController = async (
+export const updateCapacity = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -286,10 +219,10 @@ export const updateCapacityController = async (
   const parsedCapacity = parseInt(capacity, 10);
 
   if (!parsedCapacity || isNaN(parsedCapacity) || parsedCapacity < 0) {
-    res.status(StatusCodes.BAD_REQUEST).json({
-      message: "Capacity must be a positive number",
+   throw new BadRequestError({
+      message: "Capacity musst be a positive number",
+      from: "updateCapacity",
     });
-    return;
   }
   try {
     const updatedFacility = await updateFacilityCapacity(
@@ -303,6 +236,5 @@ export const updateCapacityController = async (
     return;
   } catch (error) {
     next(error);
-    return;
   }
 };
