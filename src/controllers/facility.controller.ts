@@ -21,7 +21,7 @@ export const addFacility = async (
   next: NextFunction
 ) => {
   try {
-    const facility = await create(req.body);
+    const facility = await create({...req.body, operatorId: req.currentUser.operatorId});
     res.status(StatusCodes.CREATED).json({
       message: "Facility created successfully",
       data: facility,
@@ -154,18 +154,6 @@ export const updateFacility = async (req: Request, res: Response) => {
     data: facility,
   });
 };
-
-// export const getAllFacility = async (req: Request, res: Response, next:NextFunction) => {
-//   try {
-//     const facilities = await getAll();
-//     res.status(StatusCodes.OK).json({
-//     success:true,
-//     message: "Facility(s) fetch successful",
-//     data: facilities});
-//   } catch (error) {
-//     next(error);
-//   }
-// }
 
 export const removeFacility = async (
   req: Request,
