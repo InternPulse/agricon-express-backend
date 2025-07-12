@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-// import  validationResult  from 'express-validator';
-import { BadRequestError, BaseError } from '../errors/errors';
+import { BadRequestError } from '../errors/errors';
 
 
 export const validateBookingId = (req: Request, res: Response, next: NextFunction): void => {

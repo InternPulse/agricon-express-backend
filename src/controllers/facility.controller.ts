@@ -11,7 +11,7 @@ import {
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
-import { deleteImageFromCloudinary, uploadImageToCloudinary } from "../services/cloudinary.service";
+import { deleteImageFromCloudinary } from "../services/cloudinary.service";
 const prisma = new PrismaClient();
 
 export const addFacility = async (
@@ -20,6 +20,7 @@ export const addFacility = async (
   next: NextFunction
 ) => {
   try {
+    // const facility = await createFacility({...req.body, operatorId: req.currentUser.operatorId});
     const facility = await createFacility(req.body);
     res.status(StatusCodes.CREATED).json({
       message: "Facility created successfully",
@@ -55,7 +56,6 @@ export const deleteFacilityImage = async (
       (img) => img !== imageUrl
     );
 
-    // Update facility with remaining images
     await prisma.facility.update({
       where: { id: BigInt(facilityId) },
       data: { facilityImage: updatedImages },
@@ -148,8 +148,6 @@ export const getAllFacility = async (
       minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
       maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
     };
-
-    // filters.available = available;
 
     // EXTRA VALIdation for type
     const validTypes = ["DRYER", "STORAGE", "PROCESSING", "OTHER"];

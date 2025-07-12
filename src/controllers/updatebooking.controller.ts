@@ -8,7 +8,7 @@ export interface UpdateBookingRequest {
   endDate?: Date;
 }
 
-export const updateBookingHandler = async (req: Request, res: Response): Promise<void> => {
+export const updateBookingHandler = async (req: Request, res: Response)=> {
   try {
     const { bookingId } = req.params;
 
@@ -17,7 +17,6 @@ export const updateBookingHandler = async (req: Request, res: Response): Promise
       endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
     };
 
-    // Validate dates if both are provided
     if (bookingData.startDate && bookingData.endDate && bookingData.startDate >= bookingData.endDate) {
       res.status(400).json({
         success: false,
@@ -26,7 +25,6 @@ export const updateBookingHandler = async (req: Request, res: Response): Promise
       return;
     }
 
-    // Check if booking exists and belongs to the user
     const existingBooking = await prisma.booking.findUnique({
       where: { id: Number(bookingId) },
       include: { farmer: true }
@@ -47,8 +45,7 @@ export const updateBookingHandler = async (req: Request, res: Response): Promise
       });
       return;
     }
-
-    // If dates are being updated, check for facility availability
+    
     if (bookingData.startDate || bookingData.endDate) {
       const startDate = bookingData.startDate || existingBooking.startDate;
       const endDate = bookingData.endDate || existingBooking.endDate;

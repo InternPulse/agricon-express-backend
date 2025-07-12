@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { UserRole } from "../types/types";
 import { BadRequestError, UnauthorizedError } from "../errors/errors";
 import { config } from "../config/config.env";
+import { prisma } from "../config/config.db";
 
 declare global {
   namespace Express {
@@ -11,10 +12,22 @@ declare global {
         id: string;
         email: string;
         role: UserRole;
-      }
+        farmerId?: bigint;
+        operatorId?: bigint;
+      };
     }
   }
 }
+
+type CachedUser = {
+  user_id: string;
+  email: string;
+  role: string;
+  farmerId?: bigint;
+  operatorId?: bigint;
+};
+
+const userCache = new Map<number, CachedUser>();
 
 export const verifyAuth = async (
   req: Request,
@@ -26,7 +39,7 @@ export const verifyAuth = async (
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     throw new UnauthorizedError({
       message: "Authorization header missing or invalid",
-      from: "authenticateJWT()"
+      from: "authenticateJWT()",
     });
   }
 
@@ -34,7 +47,7 @@ export const verifyAuth = async (
   if (!config.JWT_SECRET || typeof config.JWT_SECRET !== "string") {
     throw new BadRequestError({
       message: `JWT auth error, secret key is missing or invalid`,
-      from: "authenticateJWT()"
+      from: "authenticateJWT()",
     });
   }
   try {
@@ -43,36 +56,75 @@ export const verifyAuth = async (
       email: string;
       role: UserRole;
     };
+    //
+    let cachedUserEntry;
+
+    cachedUserEntry = userCache.get(Number(decoded.user_id));
+
+    if (!cachedUserEntry) {
+      if (decoded.role === UserRole.FARMER) {
+        const farmer = await prisma.farmer.findUnique({
+          where: { user_id: decoded.user_id },
+        });
+
+        if (farmer) {
+          cachedUserEntry = {
+            ...decoded,
+            farmerId: farmer.id,
+          };
+        }
+      } else if (decoded.role === UserRole.OPERATOR) {
+        const operator = await prisma.operator.findUnique({
+          where: { user_id: decoded.user_id },
+        });
+
+        if (operator) {
+          cachedUserEntry = {
+            ...decoded,
+            operatorId: operator.id,
+          };
+        }
+      }
+
+      if (!cachedUserEntry)
+        throw new UnauthorizedError({
+          message: "User not found",
+          from: "authenticateJWT()",
+        });
+
+      userCache.set(Number(decoded.user_id), cachedUserEntry);
+    }
 
     const decodeUser = {
       id: decoded.user_id,
       email: decoded.email,
-      role: decoded.role
+      role: decoded.role,
+      farmerId: cachedUserEntry.farmerId,
+      operatorId: cachedUserEntry.operatorId,
     };
 
     req.currentUser = decodeUser;
     next();
-
-  } catch(error) {
+  } catch (error) {
     console.log(error);
-    
-     throw new BadRequestError({
+
+    throw new BadRequestError({
       message: `JWT auth error`,
       from: "authenticateJWT()",
-      cause: error
+      cause: error,
     });
   }
-}
+};
 
 // Role Middleware
 export const authorizeRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!roles.includes(req.currentUser.role)) {
       throw new BadRequestError({
-      message: `Failed`,
-      from: "authorizeRole()"
-    });
-  }
+        message: `Failed`,
+        from: "authorizeRole()",
+      });
+    }
     next();
   };
 };

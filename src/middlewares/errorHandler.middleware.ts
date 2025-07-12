@@ -11,4 +11,5 @@ export const errorHandler = (error: IErrorResponse, _req: Request, res: Response
       message: error.message || 'An unexpected error occurred',
     });
   };
+  next()
 };
