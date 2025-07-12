@@ -22,7 +22,7 @@ export const createBookingHandler = async (
   try {
     const bookingData: CreateBookingParams = {
       facilityId: req.body.facilityId,
-      farmerId: req.body.farmerId,
+      farmerId: req.currentUser.farmerId!,
       startDate: new Date(req.body.startDate),
       endDate: new Date(req.body.endDate),
       amount: req.body.amount,

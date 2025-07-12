@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { UserRole } from "../types/types";
 import { BadRequestError, UnauthorizedError } from "../errors/errors";
 import { config } from "../config/config.env";
+import { prisma } from "../config/config.db";
 
 declare global {
   namespace Express {
@@ -11,10 +12,22 @@ declare global {
         id: string;
         email: string;
         role: UserRole;
+        farmerId?: bigint; 
+        operatorId?: bigint; 
       }
     }
   }
 }
+
+type CachedUser = {
+  user_id: string;
+  email: string;
+  role: string;
+  farmerId?: bigint; 
+  operatorId?: bigint; 
+};
+
+const userCache = new Map<number, CachedUser>();
 
 export const verifyAuth = async (
   req: Request,
@@ -43,11 +56,48 @@ export const verifyAuth = async (
       email: string;
       role: UserRole;
     };
+    
+   let cachedUserEntry;
+
+    cachedUserEntry = userCache.get(Number(decoded.user_id));
+
+    if (!cachedUserEntry) {
+      if (decoded.role === UserRole.FARMER) {
+         const farmer = await prisma.farmer.findUnique({
+            where: { user_id: decoded.user_id },
+        })
+        
+        if (farmer ) {
+          cachedUserEntry = {
+          ...decoded,
+          farmerId: farmer.id,
+        };
+        }
+            
+      }else if (decoded.role === UserRole.OPERATOR) {
+        const operator = await prisma.operator.findUnique({
+            where: { user_id: decoded.user_id },
+        })
+
+        if (operator) {
+          cachedUserEntry = {
+          ...decoded,
+          operatorId: operator.id,
+        };
+        }
+      }
+
+      if (!cachedUserEntry) throw new UnauthorizedError({ message: 'User not found', from: 'authenticateJWT()' });
+
+      userCache.set(Number(decoded.user_id), cachedUserEntry); 
+    }
 
     const decodeUser = {
       id: decoded.user_id,
       email: decoded.email,
-      role: decoded.role
+      role: decoded.role,
+      farmerId: cachedUserEntry.farmerId,
+      operatorId: cachedUserEntry.operatorId
     };
 
     req.currentUser = decodeUser;

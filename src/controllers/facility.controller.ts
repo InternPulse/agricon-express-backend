@@ -20,7 +20,7 @@ export const addFacility = async (
   next: NextFunction
 ) => {
   try {
-    const facility = await createFacility(req.body);
+    const facility = await createFacility({...req.body, operatorId: req.currentUser.operatorId});
     res.status(StatusCodes.CREATED).json({
       message: "Facility created successfully",
       data: facility,
