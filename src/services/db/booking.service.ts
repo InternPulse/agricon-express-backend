@@ -1,5 +1,5 @@
-import { BadRequestError, NotFoundError } from "../errors/errors";
-import { BookingStatus, CreateBookingParams } from "../types/types";
+import { BadRequestError, NotFoundError } from "../../errors/errors";
+import { BookingStatus, CreateBookingParams } from "../../types/types";
 import {
   PrismaClient,
   Booking as PrismaBooking,
@@ -40,7 +40,7 @@ const validateBookingRequest = (data: CreateBookingParams) => {
   }
 
   if (errors.length > 0) {
-    throw  {
+    throw {
       name: "ValidationError",
       message: "Booking validation failed",
       errors,
@@ -62,24 +62,31 @@ const calculateBookingAmount = (
 
 export const createBooking = async (data: CreateBookingParams) => {
   validateBookingRequest(data);
+
   try {
     const facility = await prisma.facility.findUnique({
       where: { id: data.facilityId },
     });
 
     if (!facility) {
-      throw new BadRequestError({message: "Facility not found", from: "Failed"});
+      throw new BadRequestError({
+        message: "Facility not found",
+        from: "Failed",
+      });
     }
     if (!facility.available) {
-      throw new BadRequestError({message: "Facility availability not found", from: "Failed"});
+      throw new BadRequestError({
+        message: "Facility availability not found",
+        from: "Failed",
+      });
     }
 
     const farmer = await prisma.farmer.findUnique({
-      where: { id: (data.farmerId) },
+      where: { id: data.farmerId },
     });
 
     if (!farmer) {
-      throw new NotFoundError({message: "Farmer not found", from: "Failed"});
+      throw new NotFoundError({ message: "Farmer not found", from: "Failed" });
     }
 
     const overlappingBookings = await prisma.booking.count({
@@ -94,8 +101,8 @@ export const createBooking = async (data: CreateBookingParams) => {
 
     if (overlappingBookings > 0) {
       throw new BadRequestError({
-        message: "Facility already booked for these dates",
-        from: "overlappingBookings check"
+        message: "Facility already booked for this date",
+        from: "Overlapping bookings: createBookingService()",
       });
     }
 
@@ -112,16 +119,17 @@ export const createBooking = async (data: CreateBookingParams) => {
       facilityId: data.facilityId,
       startDate: data.startDate,
       endDate: data.endDate,
-      amount
+      amount,
     };
 
     return await prisma.booking.create({
-      data: bookingData
+      data: bookingData,
     });
-  } catch (error: any) {
+  } catch (error) {
     throw new BadRequestError({
-      message: error?.errors || error?.message || "Failed to create booking",
-      from: "createBookingService"
+      message: "Error creating booking",
+      from: "createBookingService",
+      cause: error,
     });
   }
 };
@@ -163,6 +171,17 @@ export const getBookingById = async (id: bigint): Promise<Booking | null> => {
 };
 
 export const deleteBooking = async (id: bigint): Promise<void> => {
+  console.log(`Deleting booking with ID: ${id}`);
+  const booking = await prisma.booking.findUnique({
+    where: { id: Number(id) },
+  });
+
+  if (!booking) {
+    throw new NotFoundError({
+      message: "Booking not found",
+      from: "deleteBooking()",
+    });
+  }
   await prisma.booking.delete({
     where: { id: Number(id) },
   });
@@ -217,11 +236,19 @@ export const getFacilityBookings = async (
 };
 
 export const updateBookingStatus = async (
-  id: bigint,
+  id: number,
   status: BookingStatus
 ): Promise<Booking> => {
-  return await prisma.booking.update({
+  const booking = await prisma.booking.findUnique({
     where: { id: Number(id) },
+  });
+
+  if (!booking) {
+    throw new Error(`Booking with ID ${id} not found`);
+  }
+
+  return await prisma.booking.update({
+    where: { id: id },
     data: { active: status === BookingStatus.ACTIVE },
     include: {
       facility: true,

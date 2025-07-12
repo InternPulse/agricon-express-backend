@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { BadRequestError, BaseError, NotFoundError } from "../errors/errors";
+import {NotFoundError } from "../errors/errors";
 import {
   createBooking,
   deleteBooking,
@@ -8,7 +8,7 @@ import {
   getFarmerBookings,
   updateBookingStatus,
   approveOrRejectBooking,
-} from "../services/booking.service";
+} from "../services/db/booking.service";
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import { StatusCodes } from "http-status-codes";
 import { createNotification } from "../services/db/notification.service";
@@ -16,7 +16,8 @@ import { prisma } from "../config/config.db";
 
 export const createBookingHandler = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const bookingData: CreateBookingParams = {
@@ -24,55 +25,56 @@ export const createBookingHandler = async (
       farmerId: req.currentUser.farmerId!,
       startDate: new Date(req.body.startDate),
       endDate: new Date(req.body.endDate),
-      amount: req.body.amount,
     };
 
     const booking = await createBooking(bookingData);
     if (booking) {
-      await createNotification({userId: req.currentUser.id, title: "Booking Notification", message: `Your Booking with ID: ${booking.id} was reserved successfully` })
+      await createNotification({
+        userId: req.currentUser.id,
+        title: "Booking Notification",
+        message: `Your Booking with ID: ${booking.id} was reserved successfully`,
+      });
     }
     res.status(StatusCodes.CREATED).json({
       success: true,
       message: "Booking created successfully",
       data: booking,
     });
-  } catch (error: any) {
-    throw new BadRequestError({
-      message: (error?.errors && error?.errors[0]?.message) || error.message,
-      from: "createBookingController()",
-    });
+  } catch (error) {
+    next(error);
   }
 };
 
 export const deleteBookingHandler = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const { bookingId } = req.params;
+    console.log(`Deleting booking with ID: ${bookingId}`);
     await deleteBooking(BigInt(bookingId));
-    await createNotification({userId: req.currentUser.id, title: "Booking Notification", message: `Your Booking with ID: ${bookingId} was deleted successfully` })
+    await createNotification({
+      userId: req.currentUser.id,
+      title: "Booking Notification",
+      message: `Your Booking with ID: ${bookingId} was deleted successfully`,
+    });
 
-    res.status(204).send();
+    res.status(200).json({
+      success: true,
+      message: "Booking deleted successfully",
+    });
   } catch (error) {
-    if (error instanceof BaseError) {
-      res.status(error.statusCode).json(error.toJSON());
-    } else {
-      res.status(500).json({
-        success: false,
-        message: "Internal server error",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+    next(error);
   }
 };
 
 export const listFarmerBookings = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
-    // const farmerId = BigInt(req.currentUser.id);
     const userId = req.currentUser.id;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -89,35 +91,35 @@ export const listFarmerBookings = async (
       },
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Cannot get farmer Bookings",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    next(error);
   }
 };
 
 // YET TO FIX
-export const listFacilityBookings = async (
+export const listAllFacilitiesBookings = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const operator = await prisma.operator.findUnique({
-        where: { user_id: req.currentUser.id },
-      });
+      where: { user_id: req.currentUser.id },
+    });
 
     if (!operator) {
       throw new NotFoundError({
         message: "Operator not found",
-        from: "listFacilityBookings()"
-      })
+        from: "listFacilityBookings()",
+      });
     }
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const bookings = await getFacilityBookings(BigInt(operator.id), page, limit);
-  
+    const bookings = await getFacilityBookings(
+      BigInt(operator.id),
+      page,
+      limit
+    );
 
     res.status(200).json({
       status: "success",
@@ -129,11 +131,7 @@ export const listFacilityBookings = async (
       },
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Cannot get Operator Bookings",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
+    next(error);
   }
 };
 
@@ -158,15 +156,6 @@ export const fetchBooking = async (
       data: booking,
     });
   } catch (error) {
-    if (error instanceof BaseError) {
-      res.status(error.statusCode).json(error.toJSON());
-    } else {
-      res.status(500).json({
-        success: false,
-        message: "Unable to fetch booking",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
     next(error);
   }
 };
@@ -178,15 +167,18 @@ export const expireBooking = async (
 ): Promise<void> => {
   try {
     const { bookingId } = req.params;
+
     const booking = await updateBookingStatus(
-      BigInt(bookingId),
+      Number(bookingId),
       BookingStatus.INACTIVE
     );
+    console.log("Booking after expiration: ", booking);
 
-     await createNotification({ userId: req.currentUser.id, 
-        title: "Booking Notification", 
-        message: `Your Booking with ID: ${booking.id} is expired`, 
-      });
+    await createNotification({
+      userId: req.currentUser.id,
+      title: "Booking Notification",
+      message: `Your Booking with ID: ${booking.id} is expired`,
+    });
 
     res.status(200).json({
       status: "success",
@@ -197,8 +189,6 @@ export const expireBooking = async (
   }
 };
 
-
-// accept or reject booking
 export const approveOrRejectBookingHandler = async (
   req: Request,
   res: Response,
@@ -208,15 +198,21 @@ export const approveOrRejectBookingHandler = async (
     const { bookingId } = req.params;
     const { approve } = req.body;
 
-    if (typeof approve !== 'boolean') {
-    res.status(400).json({ success: false, message: "Approve must be a boolean" });
+    if (typeof approve !== "boolean") {
+      res
+        .status(400)
+        .json({ success: false, message: "Approve must be a boolean" });
     }
 
-    const updatedBooking = await approveOrRejectBooking(BigInt(bookingId), approve);
-    await createNotification({ userId: req.currentUser.id, 
-        title: "Booking Notification", 
-        message: `Booking with ID ${bookingId} was ${approve ? "approved" : "rejected"} successfully`, 
-      });
+    const updatedBooking = await approveOrRejectBooking(
+      BigInt(bookingId),
+      approve
+    );
+    await createNotification({
+      userId: req.currentUser.id,
+      title: "Booking Notification",
+      message: `Booking with ID ${bookingId} was ${approve ? "approved" : "rejected"} successfully`,
+    });
 
     res.status(200).json({
       success: true,

@@ -12,9 +12,9 @@ declare global {
         id: string;
         email: string;
         role: UserRole;
-        farmerId?: bigint; 
-        operatorId?: bigint; 
-      }
+        farmerId?: bigint;
+        operatorId?: bigint;
+      };
     }
   }
 }
@@ -23,8 +23,8 @@ type CachedUser = {
   user_id: string;
   email: string;
   role: string;
-  farmerId?: bigint; 
-  operatorId?: bigint; 
+  farmerId?: bigint;
+  operatorId?: bigint;
 };
 
 const userCache = new Map<number, CachedUser>();
@@ -39,7 +39,7 @@ export const verifyAuth = async (
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     throw new UnauthorizedError({
       message: "Authorization header missing or invalid",
-      from: "authenticateJWT()"
+      from: "authenticateJWT()",
     });
   }
 
@@ -47,7 +47,7 @@ export const verifyAuth = async (
   if (!config.JWT_SECRET || typeof config.JWT_SECRET !== "string") {
     throw new BadRequestError({
       message: `JWT auth error, secret key is missing or invalid`,
-      from: "authenticateJWT()"
+      from: "authenticateJWT()",
     });
   }
   try {
@@ -57,39 +57,42 @@ export const verifyAuth = async (
       role: UserRole;
     };
     //
-   let cachedUserEntry;
+    let cachedUserEntry;
 
     cachedUserEntry = userCache.get(Number(decoded.user_id));
 
     if (!cachedUserEntry) {
       if (decoded.role === UserRole.FARMER) {
-         const farmer = await prisma.farmer.findUnique({
-            where: { user_id: decoded.user_id },
-        })
-        
-        if (farmer ) {
+        const farmer = await prisma.farmer.findUnique({
+          where: { user_id: decoded.user_id },
+        });
+
+        if (farmer) {
           cachedUserEntry = {
-          ...decoded,
-          farmerId: farmer.id,
-        };
+            ...decoded,
+            farmerId: farmer.id,
+          };
         }
-            
-      }else if (decoded.role === UserRole.OPERATOR) {
+      } else if (decoded.role === UserRole.OPERATOR) {
         const operator = await prisma.operator.findUnique({
-            where: { user_id: decoded.user_id },
-        })
+          where: { user_id: decoded.user_id },
+        });
 
         if (operator) {
           cachedUserEntry = {
-          ...decoded,
-          operatorId: operator.id,
-        };
+            ...decoded,
+            operatorId: operator.id,
+          };
         }
       }
 
-      if (!cachedUserEntry) throw new UnauthorizedError({ message: 'User not found', from: 'authenticateJWT()' });
+      if (!cachedUserEntry)
+        throw new UnauthorizedError({
+          message: "User not found",
+          from: "authenticateJWT()",
+        });
 
-      userCache.set(Number(decoded.user_id), cachedUserEntry); 
+      userCache.set(Number(decoded.user_id), cachedUserEntry);
     }
 
     const decodeUser = {
@@ -97,30 +100,30 @@ export const verifyAuth = async (
       email: decoded.email,
       role: decoded.role,
       farmerId: cachedUserEntry.farmerId,
-      operatorId: cachedUserEntry.operatorId
+      operatorId: cachedUserEntry.operatorId,
     };
 
     req.currentUser = decodeUser;
     next();
+  } catch (error) {
+    console.log(error);
 
-  } catch(error) {
-    console.log(error)
-     throw new BadRequestError({
+    throw new BadRequestError({
       message: `JWT auth error`,
-      from: "authenticateJWT()"
+      from: "authenticateJWT()",
+      cause: error,
     });
   }
-}
+};
 
 // Role Middleware
 export const authorizeRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!roles.includes(req.currentUser.role)) {
-      res.status(403).json({
-        status: "Failed",
-        message: "Unauthorized"
+      throw new BadRequestError({
+        message: `Failed`,
+        from: "authorizeRole()",
       });
-      return;
     }
     next();
   };
