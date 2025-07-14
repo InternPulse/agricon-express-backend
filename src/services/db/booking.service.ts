@@ -6,6 +6,7 @@ import {
   Facility,
   Farmer,
 } from "@prisma/client";
+import { booking_status } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -234,6 +235,21 @@ export const getFacilityBookings = async (
     },
   });
 };
+
+export const totalFacilityBooked = async (
+  operatorId: bigint,
+  status: booking_status 
+): Promise<number> => {
+  return await prisma.booking.count({
+    where: {
+      status: status,
+      facility: {
+        operatorId: operatorId
+      }
+    }
+  });
+};
+
 
 export const updateBookingStatus = async (
   id: number,
