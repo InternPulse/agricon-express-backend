@@ -3,7 +3,7 @@ import { validateBookingId } from '../middlewares/bookingValidation';
 import { isFacilityOwner, isFarmer } from '../middlewares/authorization.middlewares';
 import { verifyAuth } from '../middlewares/authenticate.middleware';
 import { updateBookingHandler } from '../controllers/updatebooking.controller';
-import { deleteBookingHandler, expireBooking, fetchBooking, listAllFacilitiesBookings, listFarmerBookings, approveOrRejectBookingHandler, createBookingHandler } from '../controllers/booking.controller';
+import { deleteBookingHandler, expireBooking, fetchBooking, listAllFacilitiesBookings, listFarmerBookings, approveOrRejectBookingHandler, createBookingHandler, getTotalApprovedBookings } from '../controllers/booking.controller';
 import { preventDateUpdateIfPaid } from '../middlewares/bookingDateValidator';
 
 
@@ -12,6 +12,7 @@ const router = express.Router();
 router.post('/', verifyAuth, isFarmer, createBookingHandler);
 router.get('/farmer/me', verifyAuth, isFarmer, listFarmerBookings);
 router.get('/operator/me', verifyAuth, listAllFacilitiesBookings);
+router.get('/operator/approved-bookings',verifyAuth,isFacilityOwner,getTotalApprovedBookings);
 router.get('/:bookingId', verifyAuth, validateBookingId, fetchBooking);
 router.patch('/:bookingId', verifyAuth, validateBookingId, preventDateUpdateIfPaid, updateBookingHandler);
 router.delete('/:bookingId', verifyAuth, validateBookingId, deleteBookingHandler);

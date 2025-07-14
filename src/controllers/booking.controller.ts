@@ -8,11 +8,15 @@ import {
   getFarmerBookings,
   updateBookingStatus,
   approveOrRejectBooking,
+  totalFacilityBooked,
 } from "../services/db/booking.service";
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import { StatusCodes } from "http-status-codes";
 import { createNotification } from "../services/db/notification.service";
 import { prisma } from "../config/config.db";
+import { booking_status } from "@prisma/client";
+
+
 
 export const createBookingHandler = async (
   req: Request,
@@ -218,6 +222,35 @@ export const approveOrRejectBookingHandler = async (
       success: true,
       message: `Booking ${approve ? "approved" : "rejected"} successfully`,
       data: updatedBooking,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTotalApprovedBookings = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.currentUser.id;
+    const operator = await prisma.operator.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!operator) {
+      res.status(404).json({ success: false, message: "Operator not found" });
+      return;
+    }
+    const totalApproved = await totalFacilityBooked(
+      BigInt(operator.id),
+       booking_status.CONFIRMED
+    );
+
+    res.status(200).json({
+      success: true,
+      totalApprovedBookings: totalApproved,
     });
   } catch (error) {
     next(error);
