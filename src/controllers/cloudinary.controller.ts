@@ -8,7 +8,6 @@ export const uploadFacilityImage = async (
   next: NextFunction
 ) => {
   try {
-    const { facilityId } = req.params;
     if (!req.files) {
       throw new BadRequestError({
         message: "No image file provided",
@@ -38,7 +37,6 @@ export const uploadFacilityImage = async (
       success: true,
       message: "Facility Image Uploaded successfully",
       data: {
-        facilityId: BigInt(facilityId),
         imageUrls,
       },
     });
