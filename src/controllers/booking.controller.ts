@@ -16,8 +16,6 @@ import { createNotification } from "../services/db/notification.service";
 import { prisma } from "../config/config.db";
 import { booking_status } from "@prisma/client";
 
-
-
 export const createBookingHandler = async (
   req: Request,
   res: Response,
