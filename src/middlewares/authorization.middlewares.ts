@@ -10,20 +10,25 @@ declare global {
         }
     }
 }
+
 // Role Middleware
-  export const authorizeRole = (req: Request, _res: Response, next: NextFunction): void => {
-    if(!Object.keys(UserRole).includes(req.currentUser?.role)){
-      throw new UnauthorizedError({message: "unauthorized", from: "authorization middleware"})
-    };
-    next();
-  }
+export const authorizeRole = (req: Request, _res: Response, next: NextFunction): void => {
+  if(!Object.keys(UserRole).includes(req.currentUser?.role)){
+    throw new UnauthorizedError({message: "unauthorized", 
+      from: "authorizeRole: authorization middleware"
+    });
+  };
+  next();
+};
 
 export const isOperator = (req: Request, res: Response, next: NextFunction) => {
   if(!req.currentUser || req.currentUser.role !== UserRole.OPERATOR) {
-    throw new UnauthorizedError({message: "user must be a registered operator", from: "isOperator middleware"})
+    throw new UnauthorizedError({message: "User must be a registered operator", 
+      from: "isOperator middleware"
+    });
   }
   next();
-}
+};
 
 export const isAuthorizedOperator = async (req: Request, res: Response, next: NextFunction) => {
   const operator = await prisma.operator.findUnique({
@@ -31,19 +36,19 @@ export const isAuthorizedOperator = async (req: Request, res: Response, next: Ne
   });
 
   if(!operator || Number(operator?.id) !== req.body.operatorId) {
-    throw new UnauthorizedError({message: "user must be authorized operator", from: "isOperator middleware"})
+    throw new UnauthorizedError({message: "User must be authorized operator", 
+      from: "isAuthorizedOperator middleware"
+    });
   }
   next();
-}
+};
 
 export const isFarmer = (req: Request, res: Response, next: NextFunction) => {
-  console.log('isFarmer reached for', req.method, req.originalUrl);
-
   if(!req.currentUser || req.currentUser.role !== UserRole.FARMER) {
-    throw new UnauthorizedError({message: "user must be a registered farmer", from: "isfarmer middleware"})
+    throw new UnauthorizedError({message: "User must be a registered farmer", from: "isfarmer middleware"})
   }
   next();
-}
+};
 
 export const isFacilityOwner = async (req: Request, _res: Response, next: NextFunction) => {
    const facilityId = Number(req.params.facilityId);
@@ -53,14 +58,20 @@ export const isFacilityOwner = async (req: Request, _res: Response, next: NextFu
     const facility = await prisma.facility.findUnique({
       where: { id: facilityId },
       include: { operator: true }
-    })
+    });
 
     if (!facility || facility.operator.user_id !== req.currentUser.id) {
-      throw new UnauthorizedError({message: "must be the facility owner", from: "isFacilityOwner middleware"})
-    }
+      throw new UnauthorizedError({message: "User must be the facility owner", from: "isFacilityOwner middleware"})
+    };
+
     req.facility = facility as unknown as Facility;
     next();
-  } catch {
-    throw new UnauthorizedError({message: "must be the facility owner", from: "isFacilityOwner middleware"})
+
+  } catch(error){
+    throw new UnauthorizedError({
+      message: "User must be the facility owner", 
+      from: "isFacilityOwner middleware",
+      cause: error 
+    })
   }
-}
+};

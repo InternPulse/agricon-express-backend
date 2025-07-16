@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { expireReservation } from '../services/booking.service';
+import { expireReservation } from '../services/db/booking.service';
 
 // 10 minutes check
 cron.schedule('*/10 * * * *', async () =>{
