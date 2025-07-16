@@ -12,7 +12,7 @@ const router = express.Router();
 router.post('/', verifyAuth, facilityValidator, isAuthorizedOperator, addFacility);
 router.get('/', verifyAuth, getAllFacility); 
 router.get('/:operatorId/all', verifyAuth, getFacilitiesByOperatorController);
-router.post('/:facilityId/image', verifyAuth, isFacilityOwner, upload.array('images', 5), uploadFacilityImage); 
+router.post('/images', verifyAuth, upload.array('images', 5), uploadFacilityImage); 
 router.get('/:facilityId', verifyAuth,  getFacility);
 router.put('/:facilityId', verifyAuth, isFacilityOwner, updateFacility);
 router.delete('/:facilityId', verifyAuth, isFacilityOwner, deleteFacility);
