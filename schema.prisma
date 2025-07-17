@@ -16,8 +16,8 @@ model Farmer {
   createdAt  DateTime   @db.Timestamptz(6)
   updatedAt  DateTime   @db.Timestamptz(6)
   user_id    String     @unique @db.Uuid
-  users_user users_user @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_farmerprofile_user_id_0b188034_fk_users_user_id")
   Booking    Booking[]
+  users_user users_user @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_farmerprofile_user_id_0b188034_fk_users_user_id")
 
   @@index([phone], map: "users_farmerprofile_phone_cecbe5bb_like")
   @@map("users_farmerprofile")
@@ -33,8 +33,8 @@ model Operator {
   createdAt    DateTime   @db.Timestamptz(6)
   updatedAt    DateTime   @db.Timestamptz(6)
   user_id      String     @unique @db.Uuid
-  users_user   users_user @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_operatorprofile_user_id_8e9db728_fk_users_user_id")
   Facility     Facility[]
+  users_user   users_user @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_operatorprofile_user_id_8e9db728_fk_users_user_id")
 
   @@index([phone], map: "users_operatorprofile_phone_e174896f_like")
   @@map("users_operatorprofile")
@@ -166,6 +166,7 @@ model users_user {
   createdAt                        DateTime                           @db.Timestamptz(6)
   updatedAt                        DateTime                           @db.Timestamptz(6)
   is_verified                      Boolean
+  Notification                     Notification[]
   django_admin_log                 django_admin_log[]
   token_blacklist_outstandingtoken token_blacklist_outstandingtoken[]
   users_farmerprofile              Farmer?
@@ -173,7 +174,6 @@ model users_user {
   users_otp                        users_otp[]
   users_user_groups                users_user_groups[]
   users_user_user_permissions      users_user_user_permissions[]
-  Notification                     Notification[]
 
   @@index([email], map: "users_user_email_243f6e77_like")
   @@index([role], map: "users_user_role_b76f4c51")

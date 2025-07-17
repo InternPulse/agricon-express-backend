@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import {NotFoundError } from "../errors/errors";
+import {NotFoundError, BadRequestError } from "../errors/errors";
 import {
   createBooking,
   deleteBooking,
@@ -9,6 +9,7 @@ import {
   updateBookingStatus,
   approveOrRejectBooking,
   totalFacilityBooked,
+  updateBooking
 } from "../services/db/booking.service";
 import { BookingStatus, CreateBookingParams } from "../types/types";
 import { StatusCodes } from "http-status-codes";
@@ -56,18 +57,20 @@ export const deleteBookingHandler = async (
 ): Promise<void> => {
   try {
     const { bookingId } = req.params;
-    console.log(`Deleting booking with ID: ${bookingId}`);
-    await deleteBooking(BigInt(bookingId));
+    const farmerId = req.farmer.id; // from isAuthorizedFarmer middleware 
+
+    await deleteBooking(farmerId, Number(bookingId));
     await createNotification({
       userId: req.currentUser.id,
       title: "Booking Notification",
       message: `Your Booking with ID: ${bookingId} was deleted successfully`,
     });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       success: true,
       message: "Booking deleted successfully",
     });
+
   } catch (error) {
     next(error);
   }
@@ -79,11 +82,11 @@ export const listFarmerBookings = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userId = req.currentUser.id;
+    const farmerId = req.farmer.id;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const farmerBookings = await getFarmerBookings(userId, page, limit);
+    const farmerBookings = await getFarmerBookings(farmerId, page, limit);
 
     res.status(200).json({
       success: true,
@@ -106,11 +109,9 @@ export const listAllFacilitiesBookings = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const operator = await prisma.operator.findUnique({
-      where: { user_id: req.currentUser.id },
-    });
+    const operatorId = req.operator.id; // from isAuthorisedOperator middleware
 
-    if (!operator) {
+    if (!operatorId) {
       throw new NotFoundError({
         message: "Operator not found",
         from: "listFacilityBookings()",
@@ -120,7 +121,7 @@ export const listAllFacilitiesBookings = async (
     const limit = parseInt(req.query.limit as string) || 10;
 
     const bookings = await getFacilityBookings(
-      BigInt(operator.id),
+     operatorId,
       page,
       limit
     );
@@ -149,16 +150,17 @@ export const fetchBooking = async (
     const booking = await getBookingById(BigInt(bookingId));
 
     if (!booking) {
-      res.status(404).json({
-        status: "Failed",
+      throw new NotFoundError({
         message: "Booking not found",
+        from: "fetchBooking()",
       });
-    }
+    };
 
-    res.status(200).json({
-      status: "success",
+    res.status(StatusCodes.OK).json({
+      message: "Booking retrieved successfully",
       data: booking,
     });
+
   } catch (error) {
     next(error);
   }
@@ -176,7 +178,6 @@ export const expireBooking = async (
       Number(bookingId),
       BookingStatus.INACTIVE
     );
-    console.log("Booking after expiration: ", booking);
 
     await createNotification({
       userId: req.currentUser.id,
@@ -184,8 +185,8 @@ export const expireBooking = async (
       message: `Your Booking with ID: ${booking.id} is expired`,
     });
 
-    res.status(200).json({
-      status: "success",
+    res.status(StatusCodes.OK).json({
+      message: 'Booking Expired.',
       data: booking,
     });
   } catch (error) {
@@ -202,23 +203,28 @@ export const approveOrRejectBookingHandler = async (
     const { bookingId } = req.params;
     const { approve } = req.body;
 
+    const facility = req.facility
+
     if (typeof approve !== "boolean") {
-      res
-        .status(400)
-        .json({ success: false, message: "Approve must be a boolean" });
-    }
+      res.status(StatusCodes.BAD_REQUEST).json({
+        success: false, 
+        message: "Approve must be a boolean"
+      });
+    };
 
     const updatedBooking = await approveOrRejectBooking(
+      facility.id,
       BigInt(bookingId),
       approve
     );
+
     await createNotification({
       userId: req.currentUser.id,
       title: "Booking Notification",
       message: `Booking with ID ${bookingId} was ${approve ? "approved" : "rejected"} successfully`,
     });
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       success: true,
       message: `Booking ${approve ? "approved" : "rejected"} successfully`,
       data: updatedBooking,
@@ -234,18 +240,21 @@ export const getTotalApprovedBookings = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userId = req.currentUser.id;
+   const operatorId = req.operator.id;
     const operator = await prisma.operator.findUnique({
-      where: { user_id: userId },
+      where: { id: operatorId},
     });
 
     if (!operator) {
-      res.status(404).json({ success: false, message: "Operator not found" });
-      return;
+       throw new NotFoundError({
+          message: "Operator not found",
+          from: "getAllFacility",
+        });
     }
+
     const totalApproved = await totalFacilityBooked(
-      BigInt(operator.id),
-       booking_status.CONFIRMED
+      operatorId,
+      booking_status.CONFIRMED
     );
 
     res.status(200).json({
@@ -254,5 +263,82 @@ export const getTotalApprovedBookings = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+
+export interface UpdateBookingRequest {
+  startDate?: Date;
+  endDate?: Date;
+  facilityId?: bigint;
+}
+
+
+export const updateBookingHandler = async (req: Request, res: Response, next: NextFunction)=> {
+  try {
+    const { bookingId } = req.params;
+    const farmerId = req.farmer.id; // from isAuthorizedOperator middleware
+
+    const bookingData: UpdateBookingRequest = {
+      startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
+      endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
+      facilityId: req.body.facilityId ? BigInt(req.body.facilityId) : undefined,
+    };
+
+    if (bookingData.startDate && bookingData.endDate && bookingData.startDate >= bookingData.endDate) {
+      throw new BadRequestError({
+        message: 'End date must be after start date',
+        from: 'updateBookingHandler()'
+      });
+    };
+
+    const existingBooking = await prisma.booking.findUnique({
+      where: { id: Number(bookingId) },
+      include: { farmer: true }
+    });
+
+    if (!existingBooking) {
+      throw new NotFoundError({
+        message: 'Booking does not exist',
+        from: 'updateBookingHandler()'
+      });
+    };
+    
+    if (bookingData.startDate || bookingData.endDate) {
+      const startDate = bookingData.startDate || existingBooking.startDate;
+      const endDate = bookingData.endDate || existingBooking.endDate;
+
+      const overlappingBooking = await prisma.booking.findFirst({
+        where: {
+          facilityId: existingBooking.facilityId,
+          id: { not: Number(bookingId) }, 
+          OR: [
+            {
+              startDate: { lte: endDate },
+              endDate: { gte: startDate },
+            },
+          ],
+        },
+      });
+
+      if (overlappingBooking) {
+       throw new NotFoundError({
+        message: 'Facility already booked for the selected date',
+        from: 'updateBookingHandler()'
+      });
+      }
+    };
+
+
+    const updatedBooking = await updateBooking(BigInt(bookingId), farmerId, bookingData);
+
+    res.status(200).json({
+      success: true,
+      message: 'Booking updated successfully',
+      data: updatedBooking,
+    });
+
+  } catch (error) {
+    next(error)
   }
 };

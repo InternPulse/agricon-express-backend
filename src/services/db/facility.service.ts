@@ -18,73 +18,66 @@ export const createFacility = async (data: Prisma.FacilityCreateInput) => {
   }
 };
  
+
 export const getFacilityById = async (facilityId: bigint) => {
-  try {
-    const facility = await prisma.facility.findUnique({
-      where: { id: BigInt(facilityId) }
-    });
-
-
-    if (!facility) {
-      throw new NotFoundError({message: `Facility with ID ${facilityId} not found`, from: "getFacilityById()"});
+const facility = await prisma.facility.findUnique({
+    where: {
+      id: facilityId
     }
-    
-    return facility;
+  });
 
-  } catch {
-    throw new NotFoundError({message: `Facility with ID ${facilityId} not found`, from: "getFacilityById()"});
-  }
+  if (!facility) {
+    throw new NotFoundError({
+      message: "Facility not found",
+      from: "getFacilityById",
+    });
+  };
+
+  return facility;
 };
 
-export const updateFacilityById = async (facilityId: bigint, data: FacilityUpdateData) => {
+export const updateFacilityById = async (
+  facilityId: bigint,
+  data: FacilityUpdateData
+) => {
   try {
-    const facility = await prisma.facility.findUnique({
-      where: { id: BigInt(facilityId) },
-    });
-
-    if (!facility) {
-      throw new NotFoundError({
-        message: `Facility with ID ${facilityId} not found`,
-        from: "updateFacilityById()",
-      });
-    }
-
-    const updateData = { ...data } as unknown as any;
+    const updateData = { ...data } as any;
     if (updateData.type !== undefined) {
       updateData.type = { set: updateData.type };
     }
 
     const updatedFacility = await prisma.facility.update({
       where: {
-        id: BigInt(facilityId),
+        id: facilityId,
       },
       data: updateData,
     });
 
     return updatedFacility;
-
   } catch (error) {
     throw new BadRequestError({
       message: `Error updating facility with ID ${facilityId}`,
       from: "updateFacilityById()",
-      cause: error
+      cause: error,
     });
   }
 };
 
+
 export const deleteFacilityById = async (facilityId: bigint) => {
   try {
-    const deletedFacility = await prisma.facility.delete({
+    const deleted = await prisma.facility.delete({
       where: {
         id: facilityId,
       },
     });
-    return deletedFacility;
-  } catch(error) {
+
+    return deleted;
+  } catch (error) {
     throw new BadRequestError({
       message: `Error deleting facility with ID ${facilityId}`,
-      from: "deleteFacility()",
-      cause: error
+      from: "deleteFacilityById()",
+      cause: error,
     });
   }
 };
@@ -92,7 +85,7 @@ export const deleteFacilityById = async (facilityId: bigint) => {
 
 export const getAllFacilities = async (filters: FacilityFilterOptions) => {
   try {
-    const { page, limit, location, type, available, minPrice, maxPrice } = filters;
+    const { page, limit, location, type, available, minPrice, maxPrice} = filters;
     const offset = (page - 1) * limit;
 
     const where: any = {};
@@ -138,6 +131,7 @@ export const getAllFacilities = async (filters: FacilityFilterOptions) => {
     });
   }
 };
+
 
 export const getFacilitiesByOperator = async (options: GetByOperatorOptions) => {
   const { operatorId, page, limit } = options;

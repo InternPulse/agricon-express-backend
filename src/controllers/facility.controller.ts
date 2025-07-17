@@ -1,4 +1,14 @@
 import { NextFunction, Request, Response } from "express";
+
+// Extend Express Request interface to include decodeuser
+declare global {
+  namespace Express {
+    interface Request {
+      decodeuser?: any;
+    }
+  }
+};
+
 import {
   createFacility,
   getFacilityById,
@@ -9,7 +19,7 @@ import {
   updateFacilityCapacity,
 } from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
-import { BadRequestError, NotFoundError } from "../errors/errors";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
 import { deleteImageFromCloudinary } from "../services/cloudinary.service";
 const prisma = new PrismaClient();
@@ -20,8 +30,8 @@ export const addFacility = async (
   next: NextFunction
 ) => {
   try {
-    // const facility = await createFacility({...req.body, operatorId: req.currentUser.operatorId});
-    const facility = await createFacility(req.body);
+    const facility = await createFacility({...req.body, operatorId: req.currentUser.operatorId});
+
     res.status(StatusCodes.CREATED).json({
       message: "Facility created successfully",
       data: facility,
@@ -30,6 +40,7 @@ export const addFacility = async (
     next(error);
   }
 };
+
 
 export const deleteFacilityImage = async (
   req: Request,
@@ -62,7 +73,6 @@ export const deleteFacilityImage = async (
     });
 
     res.status(200).json({
-      status: "Deleted",
       message: "Image deleted successfully",
     });
     return;
@@ -75,7 +85,7 @@ export const deleteFacilityImage = async (
 export const getFacility = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const facilityId = BigInt(req.params.facilityId);
-    const facility = await getFacilityById(facilityId);
+    const facility = await getFacilityById(facilityId );
     res.status(StatusCodes.OK).json({ 
       message: "Facility fetch successful", 
       facility: facility
@@ -87,18 +97,21 @@ export const getFacility = async (req: Request, res: Response, next: NextFunctio
 };
 
 export const updateFacility = async (req: Request, res: Response, next: NextFunction) => {
-  const facilityId = BigInt(req.params.facilityId);
   try {
-    const facility = await updateFacilityById(facilityId, req.body);
+    const facility = req.facility; // already validated by isFacilityOwner
+    const updateData = req.body;
+
+    const updated = await updateFacilityById(facility.id, updateData);
+
     res.status(StatusCodes.OK).json({
-    message: "Facility update successful",
-    data: facility,
-  });
-  return;
+      message: "Facility updated successfully",
+      data: updated,
+    });
   } catch (error) {
     next(error);
   }
 };
+
 
 export const deleteFacility = async (
   req: Request,
@@ -106,11 +119,11 @@ export const deleteFacility = async (
   next: NextFunction
 ) => {
   try {
-    const facilityId = BigInt(req.params.facilityId);
-    const deleted = await deleteFacilityById(facilityId);
+    const facility = req.facility; // Already validated by isFacilityOwner middleware
+    await deleteFacilityById(facility.id);
+
     res.status(StatusCodes.OK).json({
       message: "Facility deleted successfully",
-      data: deleted,
     });
   } catch (error) {
     next(error);
@@ -156,7 +169,7 @@ export const getAllFacility = async (
         message: `Invalid type '${filters.type}'. Must be one of ${validTypes.join(", ")}`,
         from: "getAllFacility",
       });
-    }
+    };
 
     const result = await getAllFacilities(filters);
 
@@ -164,10 +177,12 @@ export const getAllFacility = async (
       message: "Facilities fetched successfully",
       ...result,
     });
+
   } catch (error) {
     next(error);
   }
 };
+
 
 export const getFacilitiesByOperatorController = async (
   req: Request,
@@ -175,17 +190,12 @@ export const getFacilitiesByOperatorController = async (
   next: NextFunction
 ) => {
   try {
-    console.log("params:", req.params);
-    const operatorIdRaw = req.params.operatorId;
 
-    let operatorId: bigint;
-
-    try {
-      operatorId = BigInt(operatorIdRaw);
-    } catch {
-      throw new BadRequestError({
-        message: "Invalid operator ID",
-        from: "getFacilitiesByOperatorController",
+    const operatorId = BigInt(req.operator?.id); // Get from isAuthorisedMiddleware
+    if (!operatorId) {
+      throw new UnauthorizedError({
+        message: "Operator not found",
+        from: "getAllFacility",
       });
     }
 
