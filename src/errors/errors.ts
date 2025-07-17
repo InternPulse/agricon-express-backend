@@ -10,7 +10,7 @@ export interface IError {
 export interface IErrorResponse {
   message: string;
   statusCode: number;
-  from: string;
+  from?: string;
   cause?: any;
 }
 
@@ -34,8 +34,6 @@ export class BaseError extends Error {
     return {
       message: this.message,
       statusCode: this.statusCode,
-      from: this.from,
-      cause: this.cause
     };
   }
 }
