@@ -1,5 +1,5 @@
 import { prisma } from "../../config/config.db";
-import { BadRequestError } from "../../errors/errors";
+import { BadRequestError, NotFoundError } from "../../errors/errors";
 
 interface INotificationCreateParams {
   userId: string,
@@ -52,4 +52,25 @@ export const getNotifications = async (userId: string) => {
       from: "getNotifications()",
     }); 
   }
+};
+
+export const getOne = async (id: number) => {
+  const notification = await prisma.notification.findUnique({
+      where: { id: id },
+    });
+
+    if (!notification) {
+      throw new NotFoundError({
+        message: `Notification with id ${id} not found`,
+        from: "getOne()",
+      });
+    }
+    return notification;
+};
+
+export const deleteOne = async (id: number) => {
+  await prisma.notification.delete({
+    where: { id: id },
+  });
+  return true;
 };
