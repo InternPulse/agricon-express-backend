@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getNotifications, markRead } from "../services/db/notification.service";
+import { deleteOne, getNotifications, getOne, markRead } from "../services/db/notification.service";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError } from "../errors/errors";
 
@@ -28,3 +28,18 @@ export const markReadNotification = async (req: Request, res: Response) => {
     throw new BadRequestError({message: "Error updating notification", from: `markReadNotification() controller, ${error}`})
   }
 }
+
+export const deleteNotification = async (req: Request, res: Response) => {
+  const notificationId = parseInt(req.params.id);
+  await deleteOne(notificationId);
+  res.status(StatusCodes.NO_CONTENT).send();
+};
+
+export const getNotification = async (req: Request, res: Response) => {
+  const notificationId = parseInt(req.params.id);
+  const notification = await getOne(notificationId);
+  res.status(StatusCodes.OK).json({
+    message: "Notification fetched successfully",
+    data: notification,
+  });
+};
