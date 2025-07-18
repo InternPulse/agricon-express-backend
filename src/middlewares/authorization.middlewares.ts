@@ -50,7 +50,7 @@ export const isAuthorizedOperator = async (req: Request, res: Response, next: Ne
     const operatorId = req.currentUser.operatorId;
     if (!operatorId) {
       throw new UnauthorizedError({
-        message: "Operator ID not found in token",
+        message: "Operator ID not found in token or user not an operator",
         from: "isAuthorizedOperator middleware",
       });
     };
@@ -79,7 +79,7 @@ export const isAuthorizedFarmer = async (req: Request, res: Response, next: Next
     const farmerId = req.currentUser.farmerId;
     if (!farmerId) {
       throw new UnauthorizedError({
-        message: "Farmer ID not found in token",
+        message: "Farmer ID not found in token or user not a farmer",
         from: "isAuthorizedFarmer middleware",
       });
     }

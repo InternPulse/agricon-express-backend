@@ -209,6 +209,15 @@ export const getFacilitiesByOperatorController = async (
       limit,
     });
 
+    if (result.facilities.length === 0) {
+       res.status(StatusCodes.OK).json({
+        message: "You don't own any facilities yet",
+        facilities: [],
+        pagination: result.pagination,
+      });
+      return;
+    }
+
     res.status(StatusCodes.OK).json({
       message: "Facilities fetched successfully",
       ...result,

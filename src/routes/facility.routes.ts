@@ -10,7 +10,7 @@ const router = express.Router();
 
 //Ideally facilityId should be id
 router.post('/', verifyAuth, facilityValidator, addFacility);
-router.get('/', verifyAuth,  getAllFacilityByFiltering);
+router.get('/', verifyAuth,  getAllFacilityByFiltering);  //Allows filtering and no filtering 
 router.get('/all', verifyAuth, isAuthorizedOperator, getFacilitiesByOperatorController);
 router.post('/images', verifyAuth, isOperator, upload.array('images', 5), uploadFacilityImage); 
 
