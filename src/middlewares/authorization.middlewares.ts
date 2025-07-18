@@ -96,7 +96,7 @@ export const isAuthorizedFarmer = async (req: Request, res: Response, next: Next
       });
     }
 
-    req.farmer = farmer;
+    req.farmer = farmer; // Make farmer available downstream
     next();
   } catch (error) {
     next(error);

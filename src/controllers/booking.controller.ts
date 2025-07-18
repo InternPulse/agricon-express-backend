@@ -57,9 +57,8 @@ export const deleteBookingHandler = async (
 ): Promise<void> => {
   try {
     const { bookingId } = req.params;
-    const farmerId = req.farmer.id; // from isAuthorizedFarmer middleware 
 
-    await deleteBooking(farmerId, Number(bookingId));
+    await deleteBooking(Number(bookingId));
     await createNotification({
       userId: req.currentUser.id,
       title: "Booking Notification",
@@ -67,7 +66,6 @@ export const deleteBookingHandler = async (
     });
 
     res.status(StatusCodes.OK).json({
-      success: true,
       message: "Booking deleted successfully",
     });
 
@@ -82,13 +80,13 @@ export const listFarmerBookings = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const farmerId = req.farmer.id;
+    const farmerId = Number(req.farmer.id);
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
     const farmerBookings = await getFarmerBookings(farmerId, page, limit);
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       success: true,
       data: farmerBookings,
       pagination: {
@@ -140,7 +138,7 @@ export const listAllFacilitiesBookings = async (
   }
 };
 
-export const fetchBooking = async (
+export const fetchBookingById = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -203,7 +201,7 @@ export const approveOrRejectBookingHandler = async (
     const { bookingId } = req.params;
     const { approve } = req.body;
 
-    const facility = req.facility
+
 
     if (typeof approve !== "boolean") {
       res.status(StatusCodes.BAD_REQUEST).json({
@@ -213,7 +211,6 @@ export const approveOrRejectBookingHandler = async (
     };
 
     const updatedBooking = await approveOrRejectBooking(
-      facility.id,
       BigInt(bookingId),
       approve
     );
@@ -257,7 +254,7 @@ export const getTotalApprovedBookings = async (
       booking_status.CONFIRMED
     );
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       success: true,
       totalApprovedBookings: totalApproved,
     });
@@ -277,7 +274,7 @@ export interface UpdateBookingRequest {
 export const updateBookingHandler = async (req: Request, res: Response, next: NextFunction)=> {
   try {
     const { bookingId } = req.params;
-    const farmerId = req.farmer.id; // from isAuthorizedOperator middleware
+    const farmerId = req.farmer.id; // from isAuthorizedFarmer middleware
 
     const bookingData: UpdateBookingRequest = {
       startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../config/config.db";
 import { BadRequestError, NotFoundError } from "../../errors/errors";
-import { FacilityFilterOptions, FacilityUpdateData, GetByOperatorOptions} from "../../types/types";
+import { FacilityFilterOptions, FacilityUpdateData, GetByOperatorOptions, UserRole} from "../../types/types";
 
 export const createFacility = async (data: Prisma.FacilityCreateInput) => {
   try {
@@ -83,12 +83,15 @@ export const deleteFacilityById = async (facilityId: bigint) => {
 };
 
 
-export const getAllFacilities = async (filters: FacilityFilterOptions) => {
+export const getAllFacility_ByFiltering = async (filters: FacilityFilterOptions, role: UserRole, operatorId?: bigint) => {
   try {
     const { page, limit, location, type, available, minPrice, maxPrice} = filters;
     const offset = (page - 1) * limit;
 
     const where: any = {};
+    if (role === UserRole.OPERATOR && operatorId) {
+      where.operatorId = operatorId;
+    }
 
     if (location) {
       where.location = { contains: location, mode: "insensitive" }

@@ -139,6 +139,7 @@ export const updateBooking = async (
 ): Promise<Booking> => {
   const existing = await prisma.booking.findUnique({
     where: { id: Number(id) },
+    include: { facility: true },
   });
 
   if (!existing || BigInt(existing.farmerId) !== BigInt(farmerId)) {
@@ -148,11 +149,25 @@ export const updateBooking = async (
     });
   };
 
+//Updates booking amount when dates are updated.
+  const newStartDate = data.startDate || existing.startDate;
+  const newEndDate = data.endDate || existing.endDate;
+
+  let updatedAmount = existing.amount;
+  if (newStartDate && newEndDate && existing.facility && typeof existing.facility.pricePerDay === "number") {
+      updatedAmount = calculateBookingAmount(
+        existing.facility.pricePerDay,
+        newStartDate,
+        newEndDate
+      );
+    }
+
   return await prisma.booking.update({
     where: { id: Number(id) },
     data: {
       startDate: data.startDate,
       endDate: data.endDate,
+      amount: updatedAmount,
       facilityId: data.facilityId,
     },
     include: {
@@ -173,13 +188,12 @@ export const getBookingById = async (bookingId: bigint): Promise<Booking | null>
   });
 };
 
-export const deleteBooking = async (farmerId: bigint, bookingId: number): Promise<void> => {
-   const booking = await prisma.booking.findFirst({
-        where: {
-          id: bookingId,
-          farmerId: farmerId, 
-        },
-      });
+export const deleteBooking = async (bookingId: number): Promise<void> => {
+   const booking = await prisma.booking.findUnique({
+      where: {
+        id: bookingId
+      }
+    });
 
   if (!booking) {
     throw new NotFoundError({
@@ -193,7 +207,7 @@ export const deleteBooking = async (farmerId: bigint, bookingId: number): Promis
 };
 
 export const getFarmerBookings = async (
-  farmerId: bigint,
+  farmerId: number,
   page: number = 1,
   limit: number = 10
 ): Promise<Booking[]> => {
@@ -249,6 +263,7 @@ export const totalFacilityBooked = async (
     where: {
       status: status,
       paid: true,
+      approved: true,
       facility: {
         operatorId: operatorId
       }
@@ -298,13 +313,10 @@ export const expireReservation = async (): Promise<void> => {
       status: "CANCELLED",
     },
   });
-
-  console.log(`Expired ${result.count} unpaid bookings older than 2 hours`);
 };
 
 // approve or reject booking
 export const approveOrRejectBooking = async (
-  facilityId: bigint,
   bookingId: bigint,
   approve: boolean
 ): Promise<Booking> => {
@@ -315,13 +327,6 @@ export const approveOrRejectBooking = async (
   if (!booking) {
     throw new NotFoundError({
       message: "Booking not found",
-      from: "approveOrRejectBooking()",
-    });
-  };
-
-    if (booking.facilityId !== facilityId) {
-    throw new BadRequestError({
-      message: "Operator not authorized to approve/reject this booking",
       from: "approveOrRejectBooking()",
     });
   };

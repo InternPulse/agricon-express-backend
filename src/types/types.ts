@@ -145,7 +145,6 @@ export interface CreateBookingParams {
   farmerId: bigint;
   startDate: Date;
   endDate: Date;
-  amount?: number;
 }
 
 export interface FacilityFilterOptions {

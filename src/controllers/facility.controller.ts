@@ -14,7 +14,7 @@ import {
   getFacilityById,
   updateFacilityById,
   deleteFacilityById,
-  getAllFacilities,
+  getAllFacility_ByFiltering,
   getFacilitiesByOperator,
   updateFacilityCapacity,
 } from "../services/db/facility.service";
@@ -130,7 +130,7 @@ export const deleteFacility = async (
   }
 };
 
-export const getAllFacility = async (
+export const getAllFacilityByFiltering = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -171,7 +171,8 @@ export const getAllFacility = async (
       });
     };
 
-    const result = await getAllFacilities(filters);
+    const { role, operatorId } = req.currentUser; // if user is a farmer or operator, to enable the filtering.
+    const result = await getAllFacility_ByFiltering(filters, role, operatorId);
 
     res.status(StatusCodes.OK).json({
       message: "Facilities fetched successfully",
