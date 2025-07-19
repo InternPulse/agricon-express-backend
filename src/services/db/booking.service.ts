@@ -21,9 +21,7 @@ const validateBookingRequest = (data: CreateBookingParams) => {
   if (!data.facilityId) {
     errors.push({ field: "facilityId", message: "Facility ID is required." });
   }
-  if (!data.farmerId) {
-    errors.push({ field: "farmerId", message: "Farmer ID is required." });
-  }
+
   if (data.startDate >= data.endDate) {
     errors.push({
       field: "dateRange",
@@ -35,9 +33,6 @@ const validateBookingRequest = (data: CreateBookingParams) => {
       field: "startDate",
       message: "Start date cannot be in the past.",
     });
-  }
-  if (data.amount !== undefined && data.amount < 0) {
-    errors.push({ field: "amount", message: "Amount cannot be negative." });
   }
 
   if (errors.length > 0) {
@@ -107,9 +102,7 @@ export const createBooking = async (data: CreateBookingParams) => {
       });
     }
 
-    const amount =
-      data.amount ??
-      calculateBookingAmount(
+    const amount = calculateBookingAmount(
         facility.pricePerDay,
         data.startDate,
         data.endDate
@@ -120,7 +113,7 @@ export const createBooking = async (data: CreateBookingParams) => {
       facilityId: data.facilityId,
       startDate: data.startDate,
       endDate: data.endDate,
-      amount,
+      amount: amount,
     };
 
     return await prisma.booking.create({
@@ -137,22 +130,45 @@ export const createBooking = async (data: CreateBookingParams) => {
 
 export const updateBooking = async (
   id: bigint,
+  farmerId: bigint, 
   data: {
     startDate?: Date;
     endDate?: Date;
-    amount?: number;
-    paid?: boolean;
-    active?: boolean;
+    facilityId?: bigint;
   }
 ): Promise<Booking> => {
+  const existing = await prisma.booking.findUnique({
+    where: { id: Number(id) },
+    include: { facility: true },
+  });
+
+  if (!existing || BigInt(existing.farmerId) !== BigInt(farmerId)) {
+    throw new NotFoundError({
+      message: 'Booking not found or not owned by you',
+      from: 'updateBooking()',
+    });
+  };
+
+//Updates booking amount when dates are updated.
+  const newStartDate = data.startDate || existing.startDate;
+  const newEndDate = data.endDate || existing.endDate;
+
+  let updatedAmount = existing.amount;
+  if (newStartDate && newEndDate && existing.facility && typeof existing.facility.pricePerDay === "number") {
+      updatedAmount = calculateBookingAmount(
+        existing.facility.pricePerDay,
+        newStartDate,
+        newEndDate
+      );
+    }
+
   return await prisma.booking.update({
     where: { id: Number(id) },
     data: {
       startDate: data.startDate,
       endDate: data.endDate,
-      amount: data.amount,
-      paid: data.paid,
-      active: data.active,
+      amount: updatedAmount,
+      facilityId: data.facilityId,
     },
     include: {
       facility: true,
@@ -161,9 +177,10 @@ export const updateBooking = async (
   });
 };
 
-export const getBookingById = async (id: bigint): Promise<Booking | null> => {
+
+export const getBookingById = async (bookingId: bigint): Promise<Booking | null> => {
   return await prisma.booking.findUnique({
-    where: { id: Number(id) },
+    where: { id: Number(bookingId) },
     include: {
       facility: true,
       farmer: true,
@@ -171,25 +188,26 @@ export const getBookingById = async (id: bigint): Promise<Booking | null> => {
   });
 };
 
-export const deleteBooking = async (id: bigint): Promise<void> => {
-  console.log(`Deleting booking with ID: ${id}`);
-  const booking = await prisma.booking.findUnique({
-    where: { id: Number(id) },
-  });
+export const deleteBooking = async (bookingId: number): Promise<void> => {
+   const booking = await prisma.booking.findUnique({
+      where: {
+        id: bookingId
+      }
+    });
 
   if (!booking) {
     throw new NotFoundError({
-      message: "Booking not found",
+      message: "Booking not found or not authorisedFarmer",
       from: "deleteBooking()",
     });
   }
   await prisma.booking.delete({
-    where: { id: Number(id) },
+    where: { id: Number(bookingId)}
   });
 };
 
 export const getFarmerBookings = async (
-  userId: string,
+  farmerId: number,
   page: number = 1,
   limit: number = 10
 ): Promise<Booking[]> => {
@@ -197,7 +215,7 @@ export const getFarmerBookings = async (
   return await prisma.booking.findMany({
     where: {
       farmer: {
-        user_id: userId,
+        id: farmerId,
       },
     },
     skip,
@@ -218,6 +236,7 @@ export const getFacilityBookings = async (
   limit: number = 10
 ): Promise<Booking[]> => {
   const skip = (page - 1) * limit;
+
   return await prisma.booking.findMany({
     where: {
       facility: {
@@ -243,6 +262,8 @@ export const totalFacilityBooked = async (
   return await prisma.booking.count({
     where: {
       status: status,
+      paid: true,
+      approved: true,
       facility: {
         operatorId: operatorId
       }
@@ -260,7 +281,10 @@ export const updateBookingStatus = async (
   });
 
   if (!booking) {
-    throw new Error(`Booking with ID ${id} not found`);
+    throw new NotFoundError({
+      message: "Booking not found",
+      from: "updateBookingStatus()",
+    });
   }
 
   return await prisma.booking.update({
@@ -289,9 +313,10 @@ export const expireReservation = async (): Promise<void> => {
       status: "CANCELLED",
     },
   });
-
-  console.log(`Expired ${result.count} unpaid bookings older than 2 hours`);
+   console.log(`Expired ${result.count} unpaid bookings older than 2 hours`);
 };
+
+
 // approve or reject booking
 export const approveOrRejectBooking = async (
   bookingId: bigint,
@@ -302,11 +327,16 @@ export const approveOrRejectBooking = async (
   });
 
   if (!booking) {
-    throw new Error("Booking not found");
-  }
+    throw new NotFoundError({
+      message: "Booking not found",
+      from: "approveOrRejectBooking()",
+    });
+  };
 
   return prisma.booking.update({
-    where: { id: Number(bookingId) },
+    where: {
+      id: Number(bookingId)
+    },
     data: {
       approved: approve,
       approvedAt: approve ? new Date() : null,
