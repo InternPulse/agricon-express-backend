@@ -254,3 +254,43 @@ export const getTotalApprovedBookings = async (
     next(error);
   }
 };
+export const getTodaysBookings = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.currentUser.id;
+
+    const operator = await prisma.operator.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!operator) {
+      res.status(404).json({ success: false, message: "Operator not found" });
+      return; // explicitly return void
+    }
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const bookings = await prisma.booking.findMany({
+      where: {
+        facility: { operatorId: operator.id },
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      include: { facility: true, farmer: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({ success: true, bookings });
+  } catch (error) {
+    next(error);
+  }
+};

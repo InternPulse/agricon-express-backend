@@ -236,3 +236,45 @@ export const updateCapacity = async (
     next(error);
   }
 };
+export const getAvailableFacilities = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.currentUser?.id;
+
+    if (!userId) {
+      throw new NotFoundError({
+        message: "User not authenticated",
+        from: "getAvailableFacilities",
+      });
+    }
+
+    const operator = await prisma.operator.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!operator) {
+      throw new NotFoundError({
+        message: "Operator not found",
+        from: "getAvailableFacilities",
+      });
+    }
+
+    const facilities = await prisma.facility.findMany({
+      where: {
+        operatorId: operator.id,
+        available: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Available facilities fetched successfully",
+      data: facilities,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
