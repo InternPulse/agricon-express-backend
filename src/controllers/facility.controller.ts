@@ -7,7 +7,7 @@ declare global {
       decodeuser?: any;
     }
   }
-};
+}
 
 import {
   createFacility,
@@ -17,11 +17,17 @@ import {
   getAllFacility_ByFiltering,
   getFacilitiesByOperator,
   updateFacilityCapacity,
+  searchFacilities,
 } from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
-import { BadRequestError, NotFoundError, UnauthorizedError } from "../errors/errors";
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
 import { deleteImageFromCloudinary } from "../services/cloudinary.service";
+import { FacilityFilterOptions } from "../types/types";
 const prisma = new PrismaClient();
 
 export const addFacility = async (
@@ -30,7 +36,10 @@ export const addFacility = async (
   next: NextFunction
 ) => {
   try {
-    const facility = await createFacility({...req.body, operatorId: req.currentUser.operatorId});
+    const facility = await createFacility({
+      ...req.body,
+      operatorId: req.currentUser.operatorId,
+    });
 
     res.status(StatusCodes.CREATED).json({
       message: "Facility created successfully",
@@ -40,7 +49,6 @@ export const addFacility = async (
     next(error);
   }
 };
-
 
 export const deleteFacilityImage = async (
   req: Request,
@@ -57,9 +65,9 @@ export const deleteFacilityImage = async (
     });
     if (!facility) {
       throw new NotFoundError({
-        message: 'Error deleting facility image',
-        from: 'deleteFacilityImage()',
-        cause: 'Facility not found'
+        message: "Error deleting facility image",
+        from: "deleteFacilityImage()",
+        cause: "Facility not found",
       });
     }
 
@@ -76,27 +84,33 @@ export const deleteFacilityImage = async (
       message: "Image deleted successfully",
     });
     return;
-
   } catch (error) {
     next(error);
   }
 };
 
-export const getFacility = async (req: Request, res: Response, next: NextFunction) => {
+export const getFacility = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const facilityId = BigInt(req.params.facilityId);
-    const facility = await getFacilityById(facilityId );
-    res.status(StatusCodes.OK).json({ 
-      message: "Facility fetch successful", 
-      facility: facility
+    const facility = await getFacilityById(facilityId);
+    res.status(StatusCodes.OK).json({
+      message: "Facility fetch successful",
+      facility: facility,
     });
-
-  } catch(error) {
+  } catch (error) {
     next(error);
   }
 };
 
-export const updateFacility = async (req: Request, res: Response, next: NextFunction) => {
+export const updateFacility = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const facility = req.facility; // already validated by isFacilityOwner
     const updateData = req.body;
@@ -111,7 +125,6 @@ export const updateFacility = async (req: Request, res: Response, next: NextFunc
     next(error);
   }
 };
-
 
 export const deleteFacility = async (
   req: Request,
@@ -169,7 +182,7 @@ export const getAllFacilityByFiltering = async (
         message: `Invalid type '${filters.type}'. Must be one of ${validTypes.join(", ")}`,
         from: "getAllFacility",
       });
-    };
+    }
 
     const { role, operatorId } = req.currentUser; // if user is a farmer or operator, to enable the filtering.
     const result = await getAllFacility_ByFiltering(filters, role, operatorId);
@@ -178,12 +191,10 @@ export const getAllFacilityByFiltering = async (
       message: "Facilities fetched successfully",
       ...result,
     });
-
   } catch (error) {
     next(error);
   }
 };
-
 
 export const getFacilitiesByOperatorController = async (
   req: Request,
@@ -191,7 +202,6 @@ export const getFacilitiesByOperatorController = async (
   next: NextFunction
 ) => {
   try {
-
     const operatorId = BigInt(req.operator?.id); // Get from isAuthorisedMiddleware
     if (!operatorId) {
       throw new UnauthorizedError({
@@ -210,7 +220,7 @@ export const getFacilitiesByOperatorController = async (
     });
 
     if (result.facilities.length === 0) {
-       res.status(StatusCodes.OK).json({
+      res.status(StatusCodes.OK).json({
         message: "You don't own any facilities yet",
         facilities: [],
         pagination: result.pagination,
@@ -237,7 +247,7 @@ export const updateCapacity = async (
   const parsedCapacity = parseInt(capacity, 10);
 
   if (!parsedCapacity || isNaN(parsedCapacity) || parsedCapacity < 0) {
-   throw new BadRequestError({
+    throw new BadRequestError({
       message: "Capacity musst be a positive number",
       from: "updateCapacity",
     });
@@ -252,6 +262,57 @@ export const updateCapacity = async (
       data: updatedFacility,
     });
     return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const globalFacilitySearch = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {
+      location,
+      type,
+      available,
+      operatorName,
+      minPrice,
+      maxPrice,
+      page = "1",
+      limit = "10",
+    } = req.query;
+
+    const allowedTypes = [
+      "DRYER",
+      "STORAGE",
+      "PROCESSING",
+      "COLDROOM",
+      "OTHER",
+    ] as const;
+    type FacilityType = (typeof allowedTypes)[number];
+
+    const filters: FacilityFilterOptions = {
+      location: location as string,
+      type: allowedTypes.includes(type as FacilityType)
+        ? (type as FacilityType)
+        : undefined,
+      available:
+        available === "true" ? true : available === "false" ? false : undefined,
+      operatorName: operatorName as string,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      page: Number(page),
+      limit: Number(limit),
+    };
+
+    const response = await searchFacilities(filters);
+
+    res.status(200).json({
+      message: "Facilities fetched successfully",
+      data: response,
+    });
   } catch (error) {
     next(error);
   }
