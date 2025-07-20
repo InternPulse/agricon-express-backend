@@ -256,3 +256,53 @@ export const updateCapacity = async (
     next(error);
   }
 };
+export const getOperatorsAvailableFacilities = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const operatorId = BigInt(req.operator?.id);
+    if (!operatorId) {
+      throw new UnauthorizedError({
+        message: "Operator not authorized",
+        from: "getAvailableFacilitiesController"
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const facilities = await prisma.facility.findMany({
+      where: { operatorId },
+    });
+
+    const facilityIds = facilities.map((f) => f.id);
+
+    const bookedToday = await prisma.booking.findMany({
+      where: {
+        facilityId: { in: facilityIds },
+        startDate: {
+          gte: today,
+          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+        },
+        status: {
+          in: ["RESERVED", "CONFIRMED"], 
+        },
+      },
+    });
+
+    const bookedFacilityIds = new Set(bookedToday.map((b) => b.facilityId));
+    const availableFacilities = facilities.filter(
+      (f) => !bookedFacilityIds.has(f.id)
+    );
+
+    res.status(StatusCodes.OK).json({
+      message: "Available facilities fetched successfully",
+      facilities: availableFacilities,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
