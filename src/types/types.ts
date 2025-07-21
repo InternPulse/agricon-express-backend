@@ -151,8 +151,9 @@ export interface FacilityFilterOptions {
   page: number;
   limit: number | 10;
   location?: string;
-  type?: 'DRYER' | 'STORAGE' | 'PROCESSING' | 'OTHER';
+  type?: 'DRYER' | 'STORAGE' | 'PROCESSING' | 'COLDROOM' | 'OTHER';
   available?: boolean;
+  operatorName?: string;
   minPrice?: number;
   maxPrice?: number;
 };
