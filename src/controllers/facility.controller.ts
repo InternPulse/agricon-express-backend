@@ -248,7 +248,7 @@ export const updateCapacity = async (
 
   if (!parsedCapacity || isNaN(parsedCapacity) || parsedCapacity < 0) {
     throw new BadRequestError({
-      message: "Capacity musst be a positive number",
+      message: "Capacity must be a positive number",
       from: "updateCapacity",
     });
   }
@@ -313,6 +313,70 @@ export const globalFacilitySearch = async (
       message: "Facilities fetched successfully",
       data: response,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getOperatorsAvailableFacilities = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const operator = req.operator;
+
+    if (!operator) {
+      throw new UnauthorizedError({
+        message: "Operator not authorized",
+        from: "getOperatorsAvailableFacilities controller"
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+
+    const facilities = await prisma.facility.findMany({
+      where: { operatorId: operator.id },
+    });
+
+    if (!facilities.length) {
+      res.status(StatusCodes.OK).json({
+        message: "Operator has no facilities",
+        facilities: [],
+      });
+      return;
+    }
+
+    const facilityIds = facilities.map((f) => f.id);
+
+    const bookedToday = await prisma.booking.findMany({
+      where: {
+        facilityId: { in: facilityIds },
+        startDate: {
+          gte: today,
+          lt: endOfToday,
+        },
+        status: {
+          in: ["RESERVED", "CONFIRMED"],
+        },
+      },
+    });
+
+    const bookedFacilityIds = new Set(bookedToday.map((b) => b.facilityId));
+
+    const availableFacilities = facilities.filter(
+      (f) => !bookedFacilityIds.has(f.id)
+    );
+
+    res.status(StatusCodes.OK).json({
+      message: "Available facilities fetched successfully",
+      facilities: availableFacilities,
+    });
+
   } catch (error) {
     next(error);
   }

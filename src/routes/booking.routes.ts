@@ -4,7 +4,8 @@ import { isFarmer, isAuthorizedFarmer, isAuthorizedOperator, isOperator } from '
 import { verifyAuth } from '../middlewares/authenticate.middleware';
 import { 
     deleteBookingHandler, expireBooking, fetchBookingById, listAllFacilitiesBookings, listFarmerBookings, 
-    approveOrRejectBookingHandler, updateBookingHandler, createBookingHandler, getTotalApprovedBookings } 
+    approveOrRejectBookingHandler, updateBookingHandler, createBookingHandler, getTotalApprovedBookings,
+    getTodaysOperatorBookings } 
     from '../controllers/booking.controller';
 
 import { preventDateUpdateIfPaid } from '../middlewares/bookingDateValidator';
@@ -16,6 +17,8 @@ router.post('/', verifyAuth, createBookingHandler);
 router.get('/farmer/me', verifyAuth, isFarmer, isAuthorizedFarmer, listFarmerBookings);
 router.get('/operator/me', verifyAuth, isOperator, isAuthorizedOperator, listAllFacilitiesBookings);
 router.get('/approved-bookings',verifyAuth, isOperator, isAuthorizedOperator, getTotalApprovedBookings);
+router.get('/operator/today', verifyAuth, isOperator, isAuthorizedOperator, getTodaysOperatorBookings);
+
 
 router.get('/:bookingId', verifyAuth, validateBookingId,  fetchBookingById);
 router.patch('/:bookingId', verifyAuth, isFarmer, isAuthorizedFarmer, validateBookingId, preventDateUpdateIfPaid, updateBookingHandler);
