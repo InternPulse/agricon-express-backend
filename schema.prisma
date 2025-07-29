@@ -235,7 +235,7 @@ model Booking {
   updatedAt    DateTime?       @updatedAt
   status       booking_status? @default(RESERVED)
   approved     Boolean?        @default(false)
-  approvedAt   DateTime?       @db.Timestamp(6)
+  approvedAt   DateTime?       @updatedAt
   facility     Facility        @relation(fields: [facilityId], references: [id])
   farmer       Farmer          @relation(fields: [farmerId], references: [id])
   transactions Transaction[]
@@ -277,4 +277,5 @@ enum booking_status {
   RESERVED
   CANCELLED
   CONFIRMED
+  EXPIRED
 }

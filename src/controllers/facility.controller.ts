@@ -16,7 +16,6 @@ import {
   deleteFacilityById,
   getAllFacility_ByFiltering,
   getFacilitiesByOperator,
-  updateFacilityCapacity,
   searchFacilities,
 } from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
@@ -232,36 +231,6 @@ export const getFacilitiesByOperatorController = async (
       message: "Facilities fetched successfully",
       ...result,
     });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const updateCapacity = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const facilityId = BigInt(req.params.facilityId);
-  const { capacity } = req.body;
-  const parsedCapacity = parseInt(capacity, 10);
-
-  if (!parsedCapacity || isNaN(parsedCapacity) || parsedCapacity < 0) {
-    throw new BadRequestError({
-      message: "Capacity musst be a positive number",
-      from: "updateCapacity",
-    });
-  }
-  try {
-    const updatedFacility = await updateFacilityCapacity(
-      facilityId,
-      parsedCapacity
-    );
-    res.status(StatusCodes.OK).json({
-      message: "Capacity updated successfully",
-      data: updatedFacility,
-    });
-    return;
   } catch (error) {
     next(error);
   }

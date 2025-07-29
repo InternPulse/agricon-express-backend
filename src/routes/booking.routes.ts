@@ -21,7 +21,7 @@ router.get('/:bookingId', verifyAuth, validateBookingId,  fetchBookingById);
 router.patch('/:bookingId', verifyAuth, isFarmer, isAuthorizedFarmer, validateBookingId, preventDateUpdateIfPaid, updateBookingHandler);
 router.delete('/:bookingId', verifyAuth, validateBookingId, deleteBookingHandler);
 router.patch('/:bookingId/expire', verifyAuth, isOperator, validateBookingId, expireBooking);
-router.patch('/:bookingId/approval', verifyAuth, isAuthorizedOperator, validateBookingId, approveOrRejectBookingHandler);
+router.patch('/:bookingId/approval', verifyAuth, validateBookingId, approveOrRejectBookingHandler);
 
 
 export default router;

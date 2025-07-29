@@ -199,16 +199,6 @@ export const updateFacilityImage = async (
   }
 };
 
-export const updateFacilityCapacity = async (
-  facilityId: bigint,
-  newCapacity: number
-) => {
-  const updatedFacility = await prisma.facility.update({
-    where: { id: facilityId },
-    data: { capacity: newCapacity },
-  });
-  return updatedFacility;
-};
 
 export const searchFacilities = async (filters: FacilityFilterOptions) => {
   try {
