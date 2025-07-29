@@ -342,7 +342,48 @@ export const updateBookingHandler = async (req: Request, res: Response, next: Ne
 };
 
 
-// export const operatorReservedBookings = async (res: Response, req: Request, next: NextFunction) => {
+export const getTodaysOperatorBookings = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const operatorId = req.operator.id;
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-  
-// }
+    const bookings = await prisma.booking.findMany({
+      where: {
+        facility: {
+          operatorId: operatorId,
+        },
+        startDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      include: {
+        facility: true,
+        farmer: true,
+      },
+    });
+    if (bookings.length === 0){
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: 'No booking made today',
+        data: bookings,
+      });
+    }
+    else{
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: `Operator's bookings for today`,
+        data: bookings,
+      });
+    }
+
+  } catch (error) {
+    next(error);
+  }
+};
