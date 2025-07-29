@@ -17,7 +17,9 @@ import {
   getAllFacility_ByFiltering,
   getFacilitiesByOperator,
   updateFacilityCapacity,
-  searchFacilities,
+  searchEverythingGlobally,
+  searchFacilitiesWithFilters,
+
 } from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -25,9 +27,9 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../errors/errors";
-import { PrismaClient } from "@prisma/client";
+import { FacilityType, PrismaClient } from "@prisma/client";
 import { deleteImageFromCloudinary } from "../services/cloudinary.service";
-import { FacilityFilterOptions } from "../types/types";
+import { FacilityFilterOptions, FacilitySearchFilters } from "../types/types";
 const prisma = new PrismaClient();
 
 export const addFacility = async (
@@ -267,53 +269,125 @@ export const updateCapacity = async (
   }
 };
 
+
+// export const globalFacilitySearch = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     const { term = "", page = 1, limit = 10 } = req.query;
+//     const userId = req.currentUser?.id; 
+//     const userRole = req.currentUser?.role;
+    
+//     if (!userId) {
+//        res.status(StatusCodes.UNAUTHORIZED).json({
+//         message: "Authentication required"
+//       });
+//       return
+//     }
+
+//     const results = await searchEverythingGlobally(
+//       term as string,
+//       userId,
+//       userRole,
+//       Number(page),
+//       Number(limit)
+//     );
+
+//     res.status(StatusCodes.OK).json({
+//       message: "Search results fetched successfully",
+//       data: results,
+//     });
+
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+
+// UPDATED CONTROLLER
+
+
 export const globalFacilitySearch = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const {
+    const { 
+      term = "", 
+      page = 1, 
+      limit = 10,
       location,
       type,
       available,
-      operatorName,
       minPrice,
       maxPrice,
-      page = "1",
-      limit = "10",
+      minCapacity,
+      maxCapacity
     } = req.query;
+    
+    const userId = req.currentUser?.id;
+    const userRole = req.currentUser?.role;
+    
+    if (!userId) {
+      res.status(StatusCodes.FORBIDDEN).json({
+        message: "Authentication required"
+      });
+      return;
+    }
 
-    const allowedTypes = [
-      "DRYER",
-      "STORAGE",
-      "PROCESSING",
-      "COLDROOM",
-      "OTHER",
-    ] as const;
-    type FacilityType = (typeof allowedTypes)[number];
+    // Check if filters are provided
+    const hasFilters = location || type || available !== undefined || 
+    minPrice || maxPrice || minCapacity || maxCapacity;
 
-    const filters: FacilityFilterOptions = {
-      location: location as string,
-      type: allowedTypes.includes(type as FacilityType)
-        ? (type as FacilityType)
-        : undefined,
-      available:
-        available === "true" ? true : available === "false" ? false : undefined,
-      operatorName: operatorName as string,
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      page: Number(page),
-      limit: Number(limit),
-    };
+    let results;
 
-    const response = await searchFacilities(filters);
+    if (hasFilters) {
+      // Use filtered search
+      const filters: FacilitySearchFilters = {
+        ...(location && { location: location as string }),
+        ...(type && { type: type as FacilityType }),
+        ...(available !== undefined && { available: available === 'true' }),
+        ...(minPrice && { minPrice: Number(minPrice) }),
+        ...(maxPrice && { maxPrice: Number(maxPrice) }),
+        ...(minCapacity && { minCapacity: Number(minCapacity) }),
+        ...(maxCapacity && { maxCapacity: Number(maxCapacity) })
+      };
 
-    res.status(200).json({
-      message: "Facilities fetched successfully",
-      data: response,
+      results = await searchFacilitiesWithFilters(
+        term as string,
+        filters,
+        userId,
+        userRole,
+        Number(page),
+        Number(limit)
+      );
+    } else {
+      // Use global search
+      results = await searchEverythingGlobally(
+        term as string,
+        userId,
+        userRole,
+        Number(page),
+        Number(limit)
+      );
+    }
+
+    res.status(StatusCodes.OK).json({
+      message: "Search results fetched successfully",
+      data: results,
+      searchTerm: term,
+      userRole,
+      hasFilters
     });
+
   } catch (error) {
+    console.error('Controller error:', error);
     next(error);
   }
 };
+
+
