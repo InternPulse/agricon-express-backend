@@ -225,24 +225,22 @@ export const searchEverythingGlobally = async (
   const skip = (page - 1) * limit;
   const numericTerm = !isNaN(Number(term)) ? Number(term) : null;
   
-  if (!term.trim() || /^[@#\$%\^&\*\(\)_\+\-=\[\]\{\}\|;':\",./<>\?~`!]+$/.test(term)) {
-    return {
-      farmers: [],
-      operators: [],
-      facilities: [],
-      bookings: [],
-      transactions: [],
-      notifications: [],
-    };
-  }
+      if (!term.trim() || /^[@#\$%\^&\*\(\)_\+\-=\[\]\{\}\|;':\",./<>\?~`!]+$/.test(term)) {
+        return {
+          farmers: [],
+          operators: [],
+          facilities: [],
+          bookings: [],
+          transactions: [],
+          notifications: [],
+        };
+      }
 
-  try {
-    const [farmers, operators, facilities, bookings, transactions, notifications] = await Promise.all([
+      try {
+        const [farmers, operators, facilities, bookings, transactions, notifications] = await Promise.all([
 
       // FARMERS SEARCH (Admin only)
-      userRole === 'ADMIN' ? (async () => {
-        console.log('🔍 Searching farmers (admin access)...');
-        
+      userRole === 'ADMIN' ? (async () => {        
         const result = await prisma.farmer.findMany({
           where: {
             OR: [
@@ -260,15 +258,11 @@ export const searchEverythingGlobally = async (
             { lastName: 'asc' }
           ]
         });
-        
-        console.log(`Found ${result.length} farmers`);
         return result;
       })() : [],
 
       // OPERATORS SEARCH (Admin only)
       userRole === 'ADMIN' ? (async () => {
-        console.log('🔍 Searching operators (admin access)...');
-        
         const result = await prisma.operator.findMany({
           where: {
             OR: [
@@ -292,15 +286,13 @@ export const searchEverythingGlobally = async (
         return result;
       })() : [],
 
-      // FACILITIES SEARCH - FIXED: Using prisma.facility instead of prisma.booking
       (async () => {
         console.log('🔍 Facilities search - GLOBAL for farmers...');
-        
-        // Build facility search conditions
         const facilitySearchConditions: any[] = [
           { name: { contains: term, mode: "insensitive" } },
           { description: { contains: term, mode: "insensitive" } },
-          { location: { contains: term, mode: "insensitive" } }
+          { location: { contains: term, mode: "insensitive" } },
+          { capacity: { contains: term, mode: "insensitive" } },
         ];
 
         // Enhanced facility type matching
@@ -308,6 +300,7 @@ export const searchEverythingGlobally = async (
           'STORAGE': ['store', 'storage', 'warehouse', 'depot'],
           'DRYER': ['dry', 'dryer', 'drying', 'dehydrate'],
           'PROCESSING': ['process', 'processing', 'manufacture', 'production'],
+          'COLDROOM': ['coldroom', 'cold', 'decay', 'preserve', 'cooling', 'cool'],
           'OTHER': ['other', 'misc', 'miscellaneous']
         };
 
@@ -323,27 +316,26 @@ export const searchEverythingGlobally = async (
 
         const statusKeywordMap = {
         'RESERVED': ['reserved', 'pending', 'wait', 'waiting', 'review'],
-        'CONFIRMED': ['confirmed', 'approved', 'accept', 'accepted'],
+        'CONFIRMED': ['confirmed', 'approved', 'accept', 'accepted', 'completed', 'done', 'finished'],
         'CANCELLED': ['cancelled', 'canceled', 'reject', 'rejected'],
-        'COMPLETED': ['completed', 'done', 'finished'],
 };
 
-Object.entries(statusKeywordMap).forEach(([status, keywords]) => {
-  keywords.forEach(keyword => {
-    if (
-      term.toLowerCase().includes(keyword.toLowerCase()) || 
-      keyword.toLowerCase().includes(term.toLowerCase())
-    ) {
-      facilitySearchConditions.push({
-        bookings: {
-          some: {
-            status: status
-          }
-        }
-      });
-    }
-  });
-});
+        Object.entries(statusKeywordMap).forEach(([status, keywords]) => {
+          keywords.forEach(keyword => {
+            if (
+              term.toLowerCase().includes(keyword.toLowerCase()) || 
+              keyword.toLowerCase().includes(term.toLowerCase())
+            ) {
+              facilitySearchConditions.push({
+                bookings: {
+                  some: {
+                    status: status
+                  }
+                }
+              });
+            }
+          });
+        });
         // Direct facility type match
         const upperTerm = term.toUpperCase();
         if (Object.values(FacilityType).includes(upperTerm as FacilityType)) {
@@ -366,9 +358,8 @@ Object.entries(statusKeywordMap).forEach(([status, keywords]) => {
         );
 
         let whereClause: any = {};
-        
+        // Only show facilities managed by the logged-in operator
         if (userRole === 'OPERATOR') {
-          console.log('🔒 Operator: Filtering facilities by operator user_id:', userId);
           whereClause = {
             AND: [
               { operator: { user_id: userId } },
@@ -377,7 +368,6 @@ Object.entries(statusKeywordMap).forEach(([status, keywords]) => {
           };
         } else {
           // FARMER and ADMIN can see ALL facilities
-          console.log('✅ Global facility search - showing ALL facilities');
           whereClause = { OR: facilitySearchConditions };
         }
         
@@ -401,7 +391,7 @@ Object.entries(statusKeywordMap).forEach(([status, keywords]) => {
           skip,
           take: limit,
           orderBy: [
-            { available: 'desc' }, // Available facilities first
+            { available: 'desc' },
             { name: 'asc' }
           ]
         });
@@ -410,20 +400,17 @@ Object.entries(statusKeywordMap).forEach(([status, keywords]) => {
         return result;
       })(),
       
-      // BOOKINGS SEARCH - FIXED: Proper enum values
+      // BOOKINGS SEARCH
       (async () => {
-        console.log('🔍 Bookings search...');
-        
-        // Build booking search conditions
         const bookingSearchConditions: any[] = [
           { facility: { name: { contains: term, mode: "insensitive" } } },
           { facility: { location: { contains: term, mode: "insensitive" } } },
+          { facility: { type: { contains: term, mode: "insensitive" } } },
           { farmer: { firstName: { contains: term, mode: "insensitive" } } },
           { farmer: { lastName: { contains: term, mode: "insensitive" } } },
           { farmer: { phone: { contains: term, mode: "insensitive" } } }
         ];
 
-        // FIXED: Booking status search with correct enum values
         const statusMapping = {
           'RESERVED': ['reserved', 'pending', 'wait', 'waiting', 'review'],
           'CONFIRMED': ['confirmed', 'approved', 'accept', 'accepted'],
@@ -441,14 +428,12 @@ Object.entries(statusKeywordMap).forEach(([status, keywords]) => {
           });
         });
 
-        // Direct status match - FIXED: Check against correct enum
         const upperTerm = term.toUpperCase();
         const validStatuses = ['RESERVED', 'CONFIRMED', 'CANCELLED', 'COMPLETED'];
         if (validStatuses.includes(upperTerm)) {
           bookingSearchConditions.push({ status: { equals: upperTerm } });
         }
 
-        // Numeric amount search
         if (numericTerm !== null) {
           bookingSearchConditions.push(
             { amount: { equals: numericTerm } },
@@ -593,7 +578,6 @@ Object.entries(statusKeywordMap).forEach(([status, keywords]) => {
           orderBy: { createdAt: 'desc' }
         });
         
-        console.log(`Found ${result.length} notifications`);
         return result;
       })()
     ]);
@@ -621,17 +605,10 @@ export const searchFacilitiesWithFilters = async (
   page: number = 1,
   limit: number = 10
 ) => {
-  console.log('🔍 Facility search with filters...');
-  console.log('Search term:', term);
-  console.log('Filters:', filters);
-  
   const skip = (page - 1) * limit;
   const numericTerm = !isNaN(Number(term)) ? Number(term) : null;
 
-  // Build search conditions
   const searchConditions: any[] = [];
-
-  // Text search conditions
   if (term.trim()) {
     searchConditions.push(
       { name: { contains: term, mode: "insensitive" } },
@@ -709,7 +686,6 @@ export const searchFacilitiesWithFilters = async (
     }
   }
 
-  // Combine search and filter conditions
   let whereClause: any = {};
   
   const conditions = [];
@@ -770,3 +746,4 @@ export const searchFacilitiesWithFilters = async (
     throw error;
   }
 };
+

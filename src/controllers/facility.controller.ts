@@ -250,7 +250,7 @@ export const updateCapacity = async (
 
   if (!parsedCapacity || isNaN(parsedCapacity) || parsedCapacity < 0) {
     throw new BadRequestError({
-      message: "Capacity musst be a positive number",
+      message: "Capacity must be a positive number",
       from: "updateCapacity",
     });
   }
@@ -270,124 +270,186 @@ export const updateCapacity = async (
 };
 
 
-// export const globalFacilitySearch = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   try {
-//     const { term = "", page = 1, limit = 10 } = req.query;
-//     const userId = req.currentUser?.id; 
-//     const userRole = req.currentUser?.role;
-    
-//     if (!userId) {
-//        res.status(StatusCodes.UNAUTHORIZED).json({
-//         message: "Authentication required"
-//       });
-//       return
-//     }
-
-//     const results = await searchEverythingGlobally(
-//       term as string,
-//       userId,
-//       userRole,
-//       Number(page),
-//       Number(limit)
-//     );
-
-//     res.status(StatusCodes.OK).json({
-//       message: "Search results fetched successfully",
-//       data: results,
-//     });
-
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
-
-// UPDATED CONTROLLER
-
-
 export const globalFacilitySearch = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { 
-      term = "", 
-      page = 1, 
-      limit = 10,
-      location,
-      type,
-      available,
-      minPrice,
-      maxPrice,
-      minCapacity,
-      maxCapacity
-    } = req.query;
-    
-    const userId = req.currentUser?.id;
+    const { term = "", page = 1, limit = 10 } = req.query;
+    const userId = req.currentUser?.id; 
     const userRole = req.currentUser?.role;
     
     if (!userId) {
-      res.status(StatusCodes.FORBIDDEN).json({
+       res.status(StatusCodes.UNAUTHORIZED).json({
         message: "Authentication required"
       });
-      return;
+      return
     }
 
-    // Check if filters are provided
-    const hasFilters = location || type || available !== undefined || 
-    minPrice || maxPrice || minCapacity || maxCapacity;
-
-    let results;
-
-    if (hasFilters) {
-      // Use filtered search
-      const filters: FacilitySearchFilters = {
-        ...(location && { location: location as string }),
-        ...(type && { type: type as FacilityType }),
-        ...(available !== undefined && { available: available === 'true' }),
-        ...(minPrice && { minPrice: Number(minPrice) }),
-        ...(maxPrice && { maxPrice: Number(maxPrice) }),
-        ...(minCapacity && { minCapacity: Number(minCapacity) }),
-        ...(maxCapacity && { maxCapacity: Number(maxCapacity) })
-      };
-
-      results = await searchFacilitiesWithFilters(
-        term as string,
-        filters,
-        userId,
-        userRole,
-        Number(page),
-        Number(limit)
-      );
-    } else {
-      // Use global search
-      results = await searchEverythingGlobally(
-        term as string,
-        userId,
-        userRole,
-        Number(page),
-        Number(limit)
-      );
-    }
+    const results = await searchEverythingGlobally(
+      term as string,
+      userId,
+      userRole,
+      Number(page),
+      Number(limit)
+    );
 
     res.status(StatusCodes.OK).json({
       message: "Search results fetched successfully",
       data: results,
-      searchTerm: term,
-      userRole,
-      hasFilters
     });
 
   } catch (error) {
-    console.error('Controller error:', error);
     next(error);
   }
 };
 
 
+
+// UPDATED CONTROLLER
+
+
+// export const globalFacilitySearch = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     const { 
+//       term = "", 
+//       page = 1, 
+//       limit = 10,
+//       location,
+//       type,
+//       available,
+//       minPrice,
+//       maxPrice,
+//       minCapacity,
+//       maxCapacity
+//     } = req.query;
+    
+//     const userId = req.currentUser?.id;
+//     const userRole = req.currentUser?.role;
+    
+//     if (!userId) {
+//       res.status(StatusCodes.FORBIDDEN).json({
+//         message: "Authentication required"
+//       });
+//       return;
+//     }
+
+//     // Check if filters are provided
+//     const hasFilters = location || type || available !== undefined || 
+//     minPrice || maxPrice || minCapacity || maxCapacity;
+
+//     let results;
+
+//     if (hasFilters) {
+//       // Use filtered search
+//       const filters: FacilitySearchFilters = {
+//         ...(location && { location: location as string }),
+//         ...(type && { type: type as FacilityType }),
+//         ...(available !== undefined && { available: available === 'true' }),
+//         ...(minPrice && { minPrice: Number(minPrice) }),
+//         ...(maxPrice && { maxPrice: Number(maxPrice) }),
+//         ...(minCapacity && { minCapacity: Number(minCapacity) }),
+//         ...(maxCapacity && { maxCapacity: Number(maxCapacity) })
+//       };
+
+//       results = await searchFacilitiesWithFilters(
+//         term as string,
+//         filters,
+//         userId,
+//         userRole,
+//         Number(page),
+//         Number(limit)
+//       );
+//     } else {
+//       // Use global search
+//       results = await searchEverythingGlobally(
+//         term as string,
+//         userId,
+//         userRole,
+//         Number(page),
+//         Number(limit)
+//       );
+//     }
+
+//     res.status(StatusCodes.OK).json({
+//       message: "Search results fetched successfully",
+//       data: results,
+//       searchTerm: term,
+//       userRole,
+//       hasFilters
+//     });
+
+//   } catch (error) {
+//     console.error('Controller error:', error);
+//     next(error);
+//   }
+// };
+
+
+export const getOperatorsAvailableFacilities = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const operator = req.operator;
+
+    if (!operator) {
+      throw new UnauthorizedError({
+        message: "Operator not authorized",
+        from: "getOperatorsAvailableFacilities controller"
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+
+    const facilities = await prisma.facility.findMany({
+      where: { operatorId: operator.id },
+    });
+
+    if (!facilities.length) {
+      res.status(StatusCodes.OK).json({
+        message: "Operator has no facilities",
+        facilities: [],
+      });
+      return;
+    }
+
+    const facilityIds = facilities.map((f) => f.id);
+
+    const bookedToday = await prisma.booking.findMany({
+      where: {
+        facilityId: { in: facilityIds },
+        startDate: {
+          gte: today,
+          lt: endOfToday,
+        },
+        status: {
+          in: ["RESERVED", "CONFIRMED"],
+        },
+      },
+    });
+
+    const bookedFacilityIds = new Set(bookedToday.map((b) => b.facilityId));
+
+    const availableFacilities = facilities.filter(
+      (f) => !bookedFacilityIds.has(f.id)
+    );
+
+    res.status(StatusCodes.OK).json({
+      message: "Available facilities fetched successfully",
+      facilities: availableFacilities,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
