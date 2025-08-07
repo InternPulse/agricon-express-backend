@@ -302,7 +302,7 @@ export const globalFacilitySearch = async (
 };
 
 
-export const getOperatorsAvailableFacilities = async (
+export const getOperatorAvailableFacilities = async (
   req: Request,
   res: Response,
   next: NextFunction
