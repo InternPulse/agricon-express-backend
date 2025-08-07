@@ -1,4 +1,4 @@
-import { FacilityType, Prisma, booking_status } from "@prisma/client";
+import { FacilityType, Prisma} from "@prisma/client";
 import { prisma } from "../../config/config.db";
 import { BadRequestError, NotFoundError } from "../../errors/errors";
 import {
@@ -8,8 +8,6 @@ import {
   GetByOperatorOptions,
   UserRole,
 } from "../../types/types";
-import { Request, Response, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
 
 export const createFacility = async (data: Prisma.FacilityCreateInput) => {
   try {
@@ -222,21 +220,19 @@ export const searchEverythingGlobally = async (
   limit: number = 10
 ) => {
   
-  const skip = (page - 1) * limit;
-  const numericTerm = !isNaN(Number(term)) ? Number(term) : null;
-  
-      if (!term.trim() || /^[@#\$%\^&\*\(\)_\+\-=\[\]\{\}\|;':\",./<>\?~`!]+$/.test(term)) {
-        return {
-          farmers: [],
-          operators: [],
-          facilities: [],
-          bookings: [],
-          transactions: [],
-          notifications: [],
-        };
-      }
+      const skip = (page - 1) * limit;
+      const numericTerm = !isNaN(Number(term)) ? Number(term) : null;
+     if (!term.trim() || /^[@#$%^&*()_+\-=\[\]{}|;':",./<>?~`!]+$/.test(term)) {
+      return {
+        farmers: [],
+        operators: [],
+        facilities: [],
+        bookings: [],
+        transactions: [],
+        notifications: [],
+      };
+    }
 
-      try {
         const [farmers, operators, facilities, bookings, transactions, notifications] = await Promise.all([
 
       // FARMERS SEARCH (Admin only)
@@ -591,9 +587,6 @@ export const searchEverythingGlobally = async (
       notifications,
     };
     
-  } catch (error) {
-    throw error;
-  }
 };
 
 
@@ -704,7 +697,6 @@ export const searchFacilitiesWithFilters = async (
 
   whereClause = conditions.length > 0 ? { AND: conditions } : {};
 
-  try {
     const [facilities, totalCount] = await Promise.all([
       prisma.facility.findMany({
         where: whereClause,
@@ -741,9 +733,5 @@ export const searchFacilitiesWithFilters = async (
       hasNextPage: page * limit < totalCount,
       hasPrevPage: page > 1
     };
-
-  } catch (error) {
-    throw error;
-  }
 };
 

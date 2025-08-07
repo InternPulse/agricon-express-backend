@@ -18,8 +18,6 @@ import {
   getFacilitiesByOperator,
   updateFacilityCapacity,
   searchEverythingGlobally,
-  searchFacilitiesWithFilters,
-
 } from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -27,9 +25,8 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../errors/errors";
-import { FacilityType, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { deleteImageFromCloudinary } from "../services/cloudinary.service";
-import { FacilityFilterOptions, FacilitySearchFilters } from "../types/types";
 const prisma = new PrismaClient();
 
 export const addFacility = async (
@@ -304,6 +301,7 @@ export const globalFacilitySearch = async (
     next(error);
   }
 };
+
 
 export const getOperatorsAvailableFacilities = async (
   req: Request,
