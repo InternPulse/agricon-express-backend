@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 
-// Extend Express Request interface to include decodeuser
 declare global {
   namespace Express {
     interface Request {
