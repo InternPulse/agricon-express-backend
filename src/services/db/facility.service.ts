@@ -222,16 +222,16 @@ export const searchEverythingGlobally = async (
   
       const skip = (page - 1) * limit;
       const numericTerm = !isNaN(Number(term)) ? Number(term) : null;
-     if (!term.trim() || /^[@#$%^&*()_+\-=\[\]{}|;':",./<>?~`!]+$/.test(term)) {
-      return {
-        farmers: [],
-        operators: [],
-        facilities: [],
-        bookings: [],
-        transactions: [],
-        notifications: [],
-      };
-    }
+    if (!term.trim() || /^[@#$%^&*()_+\-=[\]{}|;':",./<>?~`!]+$/.test(term)) {
+        return {
+          farmers: [],
+          operators: [],
+          facilities: [],
+          bookings: [],
+          transactions: [],
+          notifications: [],
+        };
+      }
 
         const [farmers, operators, facilities, bookings, transactions, notifications] = await Promise.all([
 
