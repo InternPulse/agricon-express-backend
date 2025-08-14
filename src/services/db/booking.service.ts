@@ -1,5 +1,5 @@
 import { BadRequestError, NotFoundError } from "../../errors/errors";
-import { BookingStatus, CreateBookingParams } from "../../types/types";
+import { CreateBookingParams } from "../../types/types";
 import {
   PrismaClient,
   Booking as PrismaBooking,
@@ -7,6 +7,7 @@ import {
   Farmer,
 } from "@prisma/client";
 import { booking_status } from "@prisma/client";
+import { createNotification } from "./notification.service";
 
 const prisma = new PrismaClient();
 
@@ -120,12 +121,12 @@ export const createBooking = async (data: CreateBookingParams) => {
       data: bookingData,
     });
   } catch (error) {
-    throw new BadRequestError({
-      message: "Error creating booking",
-      from: "createBookingService",
-      cause: error,
-    });
-  }
+      throw new BadRequestError({
+        message: "Error creating booking",
+        from: "createBookingService",
+        cause: error,
+      });
+    }
 };
 
 export const updateBooking = async (
@@ -262,7 +263,7 @@ export const totalFacilityBooked = async (
   return await prisma.booking.count({
     where: {
       status: status,
-      paid: true,
+      paid: false,
       approved: true,
       facility: {
         operatorId: operatorId
@@ -274,7 +275,7 @@ export const totalFacilityBooked = async (
 
 export const updateBookingStatus = async (
   id: number,
-  status: BookingStatus
+  status: booking_status
 ): Promise<Booking> => {
   const booking = await prisma.booking.findUnique({
     where: { id: Number(id) },
@@ -289,7 +290,10 @@ export const updateBookingStatus = async (
 
   return await prisma.booking.update({
     where: { id: id },
-    data: { active: status === BookingStatus.ACTIVE },
+    data: { 
+      active: false,
+      status: status
+    },
     include: {
       facility: true,
       farmer: true,
@@ -298,32 +302,50 @@ export const updateBookingStatus = async (
 };
 
 export const expireReservation = async (): Promise<void> => {
-  //const expirationTime = new Date(Date.now() - 1 * 60 * 1000); // 1 minute for testing
-  const expirationTime = new Date(Date.now() - 2 * 60 * 60 * 1000); //2hrs
-  const result = await prisma.booking.updateMany({
+  const expirationTime = new Date(Date.now() - 10 * 60 * 1000); // 10 minutes
+  const expiredBookings = await prisma.booking.findMany({
     where: {
       paid: false,
-      active: true,
+      status: booking_status.CONFIRMED,
+      approved: true,
       createdAt: {
         lt: expirationTime,
       },
     },
-    data: {
-      active: false,
-      status: "CANCELLED",
+    include: {
+      farmer: true,
     },
   });
-   console.log(`Expired ${result.count} unpaid bookings older than 2 hours`);
+
+// Loops through and update each one and notify user
+  for (const booking of expiredBookings) {
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        active: false,
+        status: booking_status.EXPIRED,
+      },
+    });
+
+    await createNotification({
+      userId: booking.farmer.user_id,
+      title: 'Booking Expired',
+      message: `Your booking with ID: ${booking.id} has expired due to non-payment.`,
+    });
+  };
 };
 
 
-// approve or reject booking
+// Approves or rejects booking
 export const approveOrRejectBooking = async (
   bookingId: bigint,
   approve: boolean
 ): Promise<Booking> => {
   const booking = await prisma.booking.findUnique({
-    where: { id: Number(bookingId) },
+    where: { 
+      id: Number(bookingId)
+    },
+    include: { facility: true },
   });
 
   if (!booking) {
@@ -333,17 +355,41 @@ export const approveOrRejectBooking = async (
     });
   };
 
-  return prisma.booking.update({
-    where: {
-      id: Number(bookingId)
-    },
-    data: {
-      approved: approve,
-      approvedAt: approve ? new Date() : null,
-    },
-    include: {
-      facility: true,
-      farmer: true,
-    },
-  });
+  if (booking.approved === true) {
+    throw new BadRequestError({
+      message:"Booking already approved",
+      from: "approveOrRejectBooking()"
+    });
+  };
+
+
+  const facility = booking.facility;
+  
+    const [updatedBooking] = await prisma.$transaction([
+      prisma.booking.update({
+      where: {
+        id: Number(bookingId)
+      },
+
+      data: {
+        approved: approve,
+        approvedAt: approve ? new Date() : null,
+        status: approve ? booking_status.CONFIRMED : booking_status.CANCELLED, // Updates status after booking is approved or rejected
+      },
+      include: {
+        facility: true,
+        farmer: true,
+      },
+    }),
+
+    ...(approve ? 
+        [
+          prisma.facility.update({
+            where: { id: facility.id },
+            data: { capacity: { decrement: 1 } },
+          }),
+        ] : []), // Only decrement capacity if booking is approved.
+  ]);
+
+  return updatedBooking;
 };

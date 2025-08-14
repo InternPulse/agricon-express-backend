@@ -101,14 +101,6 @@ export interface FacilityUpdateData {
   capacity?: number; // Optional field for capacity
 }
 
-export enum BookingStatus{
-  ACTIVE,
-  INACTIVE,
-  PENDING,
-  CANCELLED,
-  COMPLETED,
-}
-
 export interface Booking {
   id: bigint;
   facilityId: bigint;

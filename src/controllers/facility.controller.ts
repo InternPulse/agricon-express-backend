@@ -15,7 +15,6 @@ import {
   deleteFacilityById,
   getAllFacility_ByFiltering,
   getFacilitiesByOperator,
-  updateFacilityCapacity,
   searchEverythingGlobally,
 } from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
@@ -235,36 +234,6 @@ export const getFacilitiesByOperatorController = async (
   }
 };
 
-export const updateCapacity = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const facilityId = BigInt(req.params.facilityId);
-  const { capacity } = req.body;
-  const parsedCapacity = parseInt(capacity, 10);
-
-  if (!parsedCapacity || isNaN(parsedCapacity) || parsedCapacity < 0) {
-    throw new BadRequestError({
-      message: "Capacity must be a positive number",
-      from: "updateCapacity",
-    });
-  }
-  try {
-    const updatedFacility = await updateFacilityCapacity(
-      facilityId,
-      parsedCapacity
-    );
-    res.status(StatusCodes.OK).json({
-      message: "Capacity updated successfully",
-      data: updatedFacility,
-    });
-    return;
-  } catch (error) {
-    next(error);
-  }
-};
-
 
 export const globalFacilitySearch = async (
   req: Request,
@@ -303,70 +272,6 @@ export const globalFacilitySearch = async (
 
 
 export const getOperatorAvailableFacilities = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const operator = req.operator;
-
-    if (!operator) {
-      throw new UnauthorizedError({
-        message: "Operator not authorized",
-        from: "getOperatorsAvailableFacilities controller"
-      });
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const endOfToday = new Date(today.getTime() + 24 * 60 * 60 * 1000);
-
-    const facilities = await prisma.facility.findMany({
-      where: { operatorId: operator.id },
-    });
-
-    if (!facilities.length) {
-      res.status(StatusCodes.OK).json({
-        message: "Operator has no facilities",
-        facilities: [],
-      });
-      return;
-    }
-
-    const facilityIds = facilities.map((f) => f.id);
-
-    const bookedToday = await prisma.booking.findMany({
-      where: {
-        facilityId: { in: facilityIds },
-        startDate: {
-          gte: today,
-          lt: endOfToday,
-        },
-        status: {
-          in: ["RESERVED", "CONFIRMED"],
-        },
-      },
-    });
-
-    const bookedFacilityIds = new Set(bookedToday.map((b) => b.facilityId));
-
-    const availableFacilities = facilities.filter(
-      (f) => !bookedFacilityIds.has(f.id)
-    );
-
-    res.status(StatusCodes.OK).json({
-      message: "Available facilities fetched successfully",
-      facilities: availableFacilities,
-    });
-
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-export const getOperatorsAvailableFacilities = async (
   req: Request,
   res: Response,
   next: NextFunction

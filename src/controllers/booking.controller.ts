@@ -11,7 +11,7 @@ import {
   totalFacilityBooked,
   updateBooking
 } from "../services/db/booking.service";
-import { BookingStatus, CreateBookingParams } from "../types/types";
+import { CreateBookingParams } from "../types/types";
 import { StatusCodes } from "http-status-codes";
 import { createNotification } from "../services/db/notification.service";
 import { prisma } from "../config/config.db";
@@ -48,6 +48,7 @@ export const createBookingHandler = async (
   }
 };
 
+
 export const deleteBookingHandler = async (
   req: Request,
   res: Response,
@@ -71,6 +72,7 @@ export const deleteBookingHandler = async (
     next(error);
   }
 };
+
 
 export const listFarmerBookings = async (
   req: Request,
@@ -98,7 +100,7 @@ export const listFarmerBookings = async (
   }
 };
 
-// YET TO FIX
+
 export const listAllFacilitiesBookings = async (
   req: Request,
   res: Response,
@@ -136,6 +138,7 @@ export const listAllFacilitiesBookings = async (
   }
 };
 
+
 export const fetchBookingById = async (
   req: Request,
   res: Response,
@@ -162,6 +165,7 @@ export const fetchBookingById = async (
   }
 };
 
+
 export const expireBooking = async (
   req: Request,
   res: Response,
@@ -172,7 +176,7 @@ export const expireBooking = async (
 
     const booking = await updateBookingStatus(
       Number(bookingId),
-      BookingStatus.INACTIVE
+      booking_status.EXPIRED,
     );
 
     await createNotification({
@@ -190,6 +194,7 @@ export const expireBooking = async (
   }
 };
 
+
 export const approveOrRejectBookingHandler = async (
   req: Request,
   res: Response,
@@ -198,8 +203,6 @@ export const approveOrRejectBookingHandler = async (
   try {
     const { bookingId } = req.params;
     const { approve } = req.body;
-
-
 
     if (typeof approve !== "boolean") {
       res.status(StatusCodes.BAD_REQUEST).json({
@@ -228,6 +231,7 @@ export const approveOrRejectBookingHandler = async (
     next(error);
   }
 };
+
 
 export const getTotalApprovedBookings = async (
   req: Request,
@@ -324,7 +328,6 @@ export const updateBookingHandler = async (req: Request, res: Response, next: Ne
       }
     };
 
-
     const updatedBooking = await updateBooking(BigInt(bookingId), farmerId, bookingData);
 
     res.status(200).json({
@@ -337,6 +340,8 @@ export const updateBookingHandler = async (req: Request, res: Response, next: Ne
     next(error)
   }
 };
+
+
 export const getTodaysOperatorBookings = async (
   req: Request,
   res: Response,
@@ -363,12 +368,21 @@ export const getTodaysOperatorBookings = async (
         farmer: true,
       },
     });
+    if (bookings.length === 0){
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: 'No booking made today',
+        data: bookings,
+      });
+    }
+    else{
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: `Operator's bookings for today`,
+        data: bookings,
+      });
+    }
 
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: `Operator's bookings for today`,
-      data: bookings,
-    });
   } catch (error) {
     next(error);
   }
