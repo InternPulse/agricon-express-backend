@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 
-// Extend Express Request interface to include decodeuser
 declare global {
   namespace Express {
     interface Request {
@@ -17,7 +16,7 @@ import {
   getAllFacility_ByFiltering,
   getFacilitiesByOperator,
   updateFacilityCapacity,
-  searchFacilities,
+  searchEverythingGlobally,
 } from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -27,7 +26,6 @@ import {
 } from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
 import { deleteImageFromCloudinary } from "../services/cloudinary.service";
-import { FacilityFilterOptions } from "../types/types";
 const prisma = new PrismaClient();
 
 export const addFacility = async (
@@ -267,52 +265,101 @@ export const updateCapacity = async (
   }
 };
 
+
 export const globalFacilitySearch = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const {
-      location,
-      type,
-      available,
-      operatorName,
-      minPrice,
-      maxPrice,
-      page = "1",
-      limit = "10",
-    } = req.query;
+    const { term = "", page = 1, limit = 10 } = req.query;
+    const userId = req.currentUser?.id; 
+    const userRole = req.currentUser?.role;
+    
+    if (!userId) {
+       res.status(StatusCodes.UNAUTHORIZED).json({
+        message: "Authentication required"
+      });
+      return
+    }
 
-    const allowedTypes = [
-      "DRYER",
-      "STORAGE",
-      "PROCESSING",
-      "COLDROOM",
-      "OTHER",
-    ] as const;
-    type FacilityType = (typeof allowedTypes)[number];
+    const results = await searchEverythingGlobally(
+      term as string,
+      userId,
+      userRole,
+      Number(page),
+      Number(limit)
+    );
 
-    const filters: FacilityFilterOptions = {
-      location: location as string,
-      type: allowedTypes.includes(type as FacilityType)
-        ? (type as FacilityType)
-        : undefined,
-      available:
-        available === "true" ? true : available === "false" ? false : undefined,
-      operatorName: operatorName as string,
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      page: Number(page),
-      limit: Number(limit),
-    };
-
-    const response = await searchFacilities(filters);
-
-    res.status(200).json({
-      message: "Facilities fetched successfully",
-      data: response,
+    res.status(StatusCodes.OK).json({
+      message: "Search results fetched successfully",
+      data: results,
     });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getOperatorAvailableFacilities = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const operator = req.operator;
+
+    if (!operator) {
+      throw new UnauthorizedError({
+        message: "Operator not authorized",
+        from: "getOperatorsAvailableFacilities controller"
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+
+    const facilities = await prisma.facility.findMany({
+      where: { operatorId: operator.id },
+    });
+
+    if (!facilities.length) {
+      res.status(StatusCodes.OK).json({
+        message: "Operator has no facilities",
+        facilities: [],
+      });
+      return;
+    }
+
+    const facilityIds = facilities.map((f) => f.id);
+
+    const bookedToday = await prisma.booking.findMany({
+      where: {
+        facilityId: { in: facilityIds },
+        startDate: {
+          gte: today,
+          lt: endOfToday,
+        },
+        status: {
+          in: ["RESERVED", "CONFIRMED"],
+        },
+      },
+    });
+
+    const bookedFacilityIds = new Set(bookedToday.map((b) => b.facilityId));
+
+    const availableFacilities = facilities.filter(
+      (f) => !bookedFacilityIds.has(f.id)
+    );
+
+    res.status(StatusCodes.OK).json({
+      message: "Available facilities fetched successfully",
+      facilities: availableFacilities,
+    });
+
   } catch (error) {
     next(error);
   }
