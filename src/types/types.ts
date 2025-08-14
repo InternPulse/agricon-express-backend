@@ -150,6 +150,17 @@ export interface FacilityFilterOptions {
   maxPrice?: number;
 };
 
+export interface FacilitySearchFilters {
+  location?: string;
+  type?: 'DRYER' | 'STORAGE' | 'PROCESSING' | 'COLDROOM' | 'OTHER';
+  available?: boolean;
+  operatorName?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minCapacity?: number;
+  maxCapacity?: number;
+}
+
 export interface GetByOperatorOptions {
   operatorId: bigint;
   page: number;

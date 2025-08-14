@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 
-// Extend Express Request interface to include decodeuser
 declare global {
   namespace Express {
     interface Request {
@@ -16,7 +15,7 @@ import {
   deleteFacilityById,
   getAllFacility_ByFiltering,
   getFacilitiesByOperator,
-  searchFacilities,
+  searchEverythingGlobally,
 } from "../services/db/facility.service";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -26,7 +25,6 @@ import {
 } from "../errors/errors";
 import { PrismaClient } from "@prisma/client";
 import { deleteImageFromCloudinary } from "../services/cloudinary.service";
-import { FacilityFilterOptions } from "../types/types";
 const prisma = new PrismaClient();
 
 export const addFacility = async (
@@ -243,53 +241,37 @@ export const globalFacilitySearch = async (
   next: NextFunction
 ) => {
   try {
-    const {
-      location,
-      type,
-      available,
-      operatorName,
-      minPrice,
-      maxPrice,
-      page = "1",
-      limit = "10",
-    } = req.query;
+    const { term = "", page = 1, limit = 10 } = req.query;
+    const userId = req.currentUser?.id; 
+    const userRole = req.currentUser?.role;
+    
+    if (!userId) {
+       res.status(StatusCodes.UNAUTHORIZED).json({
+        message: "Authentication required"
+      });
+      return
+    }
 
-    const allowedTypes = [
-      "DRYER",
-      "STORAGE",
-      "PROCESSING",
-      "COLDROOM",
-      "OTHER",
-    ] as const;
-    type FacilityType = (typeof allowedTypes)[number];
+    const results = await searchEverythingGlobally(
+      term as string,
+      userId,
+      userRole,
+      Number(page),
+      Number(limit)
+    );
 
-    const filters: FacilityFilterOptions = {
-      location: location as string,
-      type: allowedTypes.includes(type as FacilityType)
-        ? (type as FacilityType)
-        : undefined,
-      available:
-        available === "true" ? true : available === "false" ? false : undefined,
-      operatorName: operatorName as string,
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      page: Number(page),
-      limit: Number(limit),
-    };
-
-    const response = await searchFacilities(filters);
-
-    res.status(200).json({
-      message: "Facilities fetched successfully",
-      data: response,
+    res.status(StatusCodes.OK).json({
+      message: "Search results fetched successfully",
+      data: results,
     });
+
   } catch (error) {
     next(error);
   }
 };
 
 
-export const getOperatorsAvailableFacilities = async (
+export const getOperatorAvailableFacilities = async (
   req: Request,
   res: Response,
   next: NextFunction
